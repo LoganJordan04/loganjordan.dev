@@ -8,7 +8,7 @@ import vertex from './shaders/vertex.glsl';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { DotScreenShader } from './CustomShader.js';
+import { GrainShader } from './shaders/GrainShader.js';
 
 
 export default class Sketch {
@@ -56,7 +56,7 @@ export default class Sketch {
         this.composer = new EffectComposer( this.renderer );
         this.composer.addPass( new RenderPass( this.scene, this.camera ) );
 
-        const effect1 = new ShaderPass( DotScreenShader );
+        const effect1 = new ShaderPass( GrainShader );
         effect1.uniforms[ 'scale' ].value = 4;
         this.composer.addPass( effect1 );
     }
