@@ -1,11 +1,13 @@
 {
-  "name": "${PROJECT_NAME}",
+  "name": "web-portfolio",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./js/main.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "private": true,
   "dependencies": {
