@@ -33,13 +33,15 @@ export default class Sketch {
             0.001,
             1000
         );
-
         this.camera.position.set(0, 0, 1.3);
+        
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        
+        this.clock = new THREE.Clock();
         this.time = 0;
 
         this.dracoLoader = new DRACOLoader();
-        this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/'); // use a full url path
+        this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/');
         this.gltf = new GLTFLoader();
         this.gltf.setDRACOLoader(this.dracoLoader);
 
@@ -114,7 +116,7 @@ export default class Sketch {
         this.scene.add(light1);
 
         const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-        light2.position.set(0.5, 0, 0.866); // ~60º
+        light2.position.set(0.5, 0, 0.866);  // ~60º
         this.scene.add(light2);
     }
 
@@ -131,8 +133,13 @@ export default class Sketch {
 
     render() {
         if (!this.isPlaying) return;
-        this.time += 0.0003;
+
+        let delta = this.clock.getDelta();
+        delta = Math.min(delta, 1 / 60);  // 60 fps cap
+
+        this.time += delta;
         this.material.uniforms.time.value = this.time;
+
         requestAnimationFrame(this.render.bind(this));
         // this.renderer.render(this.scene, this.camera);
         this.composer.render(this.scene, this.camera);
