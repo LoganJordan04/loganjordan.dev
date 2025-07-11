@@ -111,8 +111,8 @@ void main() {
     vec3 baseThird = vec3(235./255., 88./255., 14./255.);
     vec3 accent = vec3(0., 0., 0.);
 
-    float n = cnoise(vPosition + time);
-//    float n = cnoise(vPosition + time) + 1231231.;  // Woah
+    float n = cnoise(vPosition + (time * 0.02));
+//    float n = cnoise(vPosition + (time * 0.02)) + 1231231.;  // Woah
     
     vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;
     
