@@ -52,6 +52,9 @@ export default class Sketch {
         this.resize();
         this.render();
         this.setupResize();
+
+        this.fpsFrameCount = 0;
+        this.fpsElapsed = 0;
     }
     
     initPost() {
@@ -74,22 +77,11 @@ export default class Sketch {
         this.composer.setSize(this.width, this.height);
         this.camera.aspect = this.width / this.height;
 
-        // image cover
-        this.imageAspect = 853/1280;
-        let a1; let a2;
-        if(this.height/this.width > this.imageAspect) {
-            a1 = (this.width / this.height) * this.imageAspect;
-            a2 = 1;
-        } else {
-            a1 = 1;
-            a2 = (this.height / this.width) * this.imageAspect;
-        }
-
         this.camera.updateProjectionMatrix();
     }
 
     addObjects() {
-        let that = this;
+        // let that = this;
         this.material = new THREE.ShaderMaterial({
             extensions: {
                 derivatives: "#extension GL_OES_standard_derivatives : enable"
@@ -111,35 +103,45 @@ export default class Sketch {
         this.scene.add(this.plane);
     }
 
-    addLights() {
-        const light1 = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(light1);
-
-        const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-        light2.position.set(0.5, 0, 0.866);  // ~60º
-        this.scene.add(light2);
-    }
-
-    stop() {
-        this.isPlaying = false;
-    }
-
-    play() {
-        if(!this.isPlaying){
-            this.isPlaying = true;
-            this.render()
-        }
-    }
+    // addLights() {
+    //     const light1 = new THREE.AmbientLight(0xffffff, 0.5);
+    //     this.scene.add(light1);
+    //
+    //     const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    //     light2.position.set(0.5, 0, 0.866);  // ~60º
+    //     this.scene.add(light2);
+    // }
+    //
+    // stop() {
+    //     this.isPlaying = false;
+    // }
+    //
+    // play() {
+    //     if(!this.isPlaying){
+    //         this.isPlaying = true;
+    //         this.render()
+    //     }
+    // }
 
     render() {
         if (!this.isPlaying) return;
 
         let delta = this.clock.getDelta();
-        delta = Math.min(delta, 1 / 60);  // 60 fps cap
+        delta = Math.min(delta, 1 / 60);
 
         this.time += delta;
         this.material.uniforms.time.value = this.time;
 
+        // FPS calculation
+        this.fpsFrameCount++;
+        this.fpsElapsed += delta;
+        if (this.fpsElapsed >= 1) {
+            const fps = this.fpsFrameCount / this.fpsElapsed;
+            console.log('FPS:', fps.toFixed(1));
+            this.fpsFrameCount = 0;
+            this.fpsElapsed = 0;
+        }
+        
         requestAnimationFrame(this.render.bind(this));
         // this.renderer.render(this.scene, this.camera);
         this.composer.render(this.scene, this.camera);
