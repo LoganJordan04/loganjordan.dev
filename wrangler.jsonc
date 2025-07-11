@@ -1,0 +1,5 @@
+{
+  "name": "web-portfolio",
+  "compatibility_date": "2025-07-09",
+  "main": "./js/index.js"
+}
