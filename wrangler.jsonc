@@ -1,5 +1,11 @@
 {
   "name": "web-portfolio",
   "compatibility_date": "2025-07-09",
-  "main": "./js/index.js"
+  "main": "./js/index.js",
+  "routes": [
+    {
+      "pattern": "loganjordan.dev",
+      "custom_domain": true
+    }
+  ]
 }
