@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import fragment from './shaders/fragment.glsl';
 import vertex from './shaders/vertex.glsl';
 
@@ -10,11 +8,25 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GrainShader } from './shaders/GrainShader.js';
 
+// Define color palettes
+const colors = [
+    ["#24479e", "#ebe0ca", "#eb580e"]
+];
+// Select a random palette and convert to THREE.Color
+const palette = colors[Math.floor(Math.random() * colors.length)].map(color => new THREE.Color(color));
 
+
+// Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export default class Sketch {
+    /**
+     * @param {Object} options - Configuration options
+     * @param {HTMLElement} options.dom - The container DOM element for rendering
+     */
     constructor(options) {
+        // Create the scene
         this.scene = new THREE.Scene();
 
+        // Set up renderer and append to container
         this.container = options.dom;
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
@@ -24,9 +36,9 @@ export default class Sketch {
         this.renderer.setClearColor(0xeeeeee, 1);
         this.renderer.physicallyCorrectLights = true;
         this.renderer.outputEncoding = THREE.SRGBColorSpace;
-
         this.container.appendChild(this.renderer.domElement);
 
+        // Set up camera
         this.camera = new THREE.PerspectiveCamera(
             70,
             this.width / this.height,
@@ -34,71 +46,83 @@ export default class Sketch {
             1000
         );
         this.camera.position.set(0, 0, 1.3);
-        
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        
+
+        // Add orbit controls for camera interaction
+        // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+        // Initialize clock and time tracking
         this.clock = new THREE.Clock();
         this.time = 0;
 
-        this.dracoLoader = new DRACOLoader();
-        this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/');
-        this.gltf = new GLTFLoader();
-        this.gltf.setDRACOLoader(this.dracoLoader);
+        this.isPlaying = true;  // Animation state
 
-        this.isPlaying = true;
-
+        // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
         this.initPost();
         this.resize();
         this.render();
         this.setupResize();
 
+        // FPS tracking variables
         this.fpsFrameCount = 0;
         this.fpsElapsed = 0;
+
+        // Mouse movement event to update shader uniform
+        this.container.addEventListener('mousemove', (e) => {
+            // Normalize mouse coordinates to [0, 1]
+            const rect = this.container.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = 1.0 - (e.clientY - rect.top) / rect.height; // Flip Y for GL coords
+            this.material.uniforms.mouse.value.set(x, y);
+        });
     }
     
+    // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
     initPost() {
-        this.composer = new EffectComposer( this.renderer );
-        this.composer.addPass( new RenderPass( this.scene, this.camera ) );
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.addPass(new RenderPass(this.scene, this.camera));
 
-        const effect1 = new ShaderPass( GrainShader );
-        effect1.uniforms[ 'scale' ].value = 4;
-        this.composer.addPass( effect1 );
+        // Add grain shader as a postprocessing effect
+        const effect1 = new ShaderPass(GrainShader);
+        effect1.uniforms['scale'].value = 4;
+        this.composer.addPass(effect1);
     }
 
+    // Set up window resize event listener.
     setupResize() {
         window.addEventListener("resize", this.resize.bind(this));
     }
 
+    // Handle resizing of renderer, composer, and camera.
     resize() {
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
         this.renderer.setSize(this.width, this.height);
         this.composer.setSize(this.width, this.height);
         this.camera.aspect = this.width / this.height;
-
         this.camera.updateProjectionMatrix();
     }
 
+    // Add objects (geometry and material) to the scene.
     addObjects() {
-        // let that = this;
+        // Create custom shader material
         this.material = new THREE.ShaderMaterial({
             extensions: {
                 derivatives: "#extension GL_OES_standard_derivatives : enable"
             },
             side: THREE.DoubleSide,
             uniforms: {
-                time: {value: 0},
+                time: { value: 0 },
                 resolution: { value: new THREE.Vector4() },
+                uColor: { value: palette },
+                mouse: { value: new THREE.Vector2(0, 0) }
             },
-            // wireframe: true,
-            // transparent: true,
             vertexShader: vertex,
             fragmentShader: fragment
         });
 
+        // Create a plane geometry and mesh
         this.geometry = new THREE.PlaneGeometry(4, 2, 1, 1);
-
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
@@ -122,17 +146,18 @@ export default class Sketch {
     //         this.render()
     //     }
     // }
-
+    
+    // Main render loop. Updates uniforms, handles FPS, and renders the scene.
     render() {
         if (!this.isPlaying) return;
 
         let delta = this.clock.getDelta();
-        delta = Math.min(delta, 1 / 60);
+        delta = Math.min(delta, 1 / 60); // Clamp delta for stability
 
         this.time += delta;
         this.material.uniforms.time.value = this.time;
 
-        // FPS calculation
+        // FPS calculation and logging
         this.fpsFrameCount++;
         this.fpsElapsed += delta;
         if (this.fpsElapsed >= 1) {
@@ -141,13 +166,15 @@ export default class Sketch {
             this.fpsFrameCount = 0;
             this.fpsElapsed = 0;
         }
-        
+
         requestAnimationFrame(this.render.bind(this));
+        // Use composer for postprocessing; comment out for raw render
         // this.renderer.render(this.scene, this.camera);
         this.composer.render(this.scene, this.camera);
     }
 }
 
+// Instantiate the Sketch class and attach to DOM element with id 'container'
 new Sketch({
     dom: document.getElementById('container')
 });

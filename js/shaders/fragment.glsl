@@ -1,18 +1,16 @@
-uniform float time;
-uniform float progress;
-uniform sampler2D texture1;
-uniform vec4 resolution;
-varying vec2 vUv;
-varying vec3 vPosition;
-float PI = 3.141592653589793238;
+uniform float time;           // Animation time (seconds)
+uniform vec3 uColor[3];       // Array of 3 colors for gradient
+uniform vec2 mouse;           // Mouse position in normalized coordinates
+
+varying vec2 vUv;             // UV coordinates
+varying vec3 vPosition;       // Vertex position in world or local space
+
 
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson (https://github.com/stegu/webgl-noise)
-
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
-
 float cnoise(vec3 P){
     vec3 Pi0 = floor(P); // Integer part for indexing
     vec3 Pi1 = Pi0 + vec3(1.0); // Integer part + 1
@@ -81,23 +79,26 @@ float cnoise(vec3 P){
     return 2.2 * n_xyz;
 }
 
+// Generates a smooth line pattern based on UV and offset
 float lines(vec2 uv, float offset) {
     return smoothstep(
-        0., 0.5 + offset * 0.2,
-        0.5 * abs((cos(uv.y * 10.) + offset * 1.))
+    0., 0.5 + offset * 0.2,
+    0.5 * abs((cos(uv.y * 10.) + offset * 1.))
     );
 }
 
+// 2D rotation matrix for rotating UVs or positions
 mat2 rotate2D(float angle) {
     return mat2(
-        cos(angle), -sin(angle),
-        sin(angle), cos(angle)
+    cos(angle), -sin(angle),
+    sin(angle), cos(angle)
     );
 }
 
+// Blends three colors using a smooth gradient based on t
 vec3 threeColorGradient(vec3 color1, vec3 color2, vec3 color3, float t) {
     t = clamp(t, 0.0, 1.);
-    
+
     float weight1 = smoothstep(0.75, 0., t);
     float weight3 = smoothstep(0.25, 1., t);
     float weight2 = 1. - weight1 - weight3;
@@ -106,22 +107,33 @@ vec3 threeColorGradient(vec3 color1, vec3 color2, vec3 color3, float t) {
 }
 
 void main() {
-    vec3 baseFirst = vec3(36./255., 71./255., 158./255.);
-    vec3 baseSecond = vec3(235./255., 224./255., 202./255.);
-    vec3 baseThird = vec3(235./255., 88./255., 14./255.);
-    vec3 accent = vec3(0., 0., 0.);
+    vec3 black = vec3(0., 0., 0.);
 
-    float n = cnoise(vPosition + (time * 0.02));
-//    float n = cnoise(vPosition + (time * 0.02)) + 1231231.;  // Woah
-    
+    // Calculate distance from mouse to current UV coordinate
+    float dist = distance(vUv, mouse);
+
+    // Create a ripple effect centered at the mouse position
+    float ripple = exp(-dist * 1.) * 1.;
+
+    // Modulate noise input with ripple and time for animation
+    vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.03);
+
+    // Generate Perlin noise value
+    float n = cnoise(noiseInput);
+
+    // Rotate and scale the base UVs for pattern distortion
     vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;
-    
+
+    // Generate two line patterns with different offsets
     float basePattern = lines(baseUV, 0.5);
     float secondPattern = lines(baseUV, 0.01);
 
-    vec3 coloredLines = threeColorGradient(baseFirst, baseSecond, baseThird, basePattern);
-    
-    vec3 finalColor = mix(coloredLines, accent, secondPattern);
-    
+    // Blend three colors based on the base pattern
+    vec3 coloredLines = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
+
+    // Mix colored lines with black using the second pattern as a mask
+    vec3 finalColor = mix(coloredLines, black, secondPattern);
+
+    // Output the final color
     gl_FragColor = vec4(finalColor, 1.);
 }
