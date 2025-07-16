@@ -1,9 +1,9 @@
-uniform float time;           // Animation time (seconds)
-uniform vec3 uColor[3];       // Array of 3 colors for gradient
-uniform vec2 mouse;           // Mouse position in normalized coordinates
+uniform float time;
+uniform vec3 uColor[3];
+uniform vec2 mouse;
 
-varying vec2 vUv;             // UV coordinates
-varying vec3 vPosition;       // Vertex position in world or local space
+varying vec2 vUv;
+varying vec3 vPosition;
 
 
 //	Classic Perlin 3D Noise 

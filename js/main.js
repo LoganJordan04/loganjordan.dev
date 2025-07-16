@@ -174,7 +174,7 @@ export default class Sketch {
     }
 }
 
-// Instantiate the Sketch class and attach to DOM element with id 'container'
+// Instantiate the Sketch class and attach to DOM element with id 'three-container'
 new Sketch({
-    dom: document.getElementById('container')
+    dom: document.getElementById('three-container')
 });
