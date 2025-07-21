@@ -68,11 +68,11 @@ export default class Sketch {
         this.fpsElapsed = 0;
 
         // Mouse movement event to update shader uniform
-        this.container.addEventListener('mousemove', (e) => {
-            // Normalize mouse coordinates to [0, 1]
+        const heroContainer = this.container.parentElement; // .hero-container
+        heroContainer.addEventListener('mousemove', (e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
-            const y = 1.0 - (e.clientY - rect.top) / rect.height; // Flip Y for GL coords
+            const y = 1.0 - (e.clientY - rect.top) / rect.height;
             this.material.uniforms.mouse.value.set(x, y);
         });
     }
