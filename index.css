@@ -29,7 +29,7 @@ body, html {
 }
 
 #loading-image {
-    width: min(30vw, 300px);
+    width: min(30vw, 250px);
     opacity: 1;
     transition: opacity 0.5s ease-in;
 }
