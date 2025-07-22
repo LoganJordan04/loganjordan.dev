@@ -170,6 +170,13 @@ export default class Sketch {
 const loadingScreen = document.getElementById('loading-container');
 const loadingImage = document.getElementById('loading-image');
 
+// Prevent browser from restoring scroll position
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+// Scroll to top of page on reload
+window.scrollTo(0, 0);
+
 // When the window finishes loading, start the fade-out sequence
 window.addEventListener('load', () => {
     setTimeout(() => {
@@ -187,7 +194,8 @@ window.addEventListener('load', () => {
 
 // Temp for testing
 window.addEventListener('click', () => {
-    loadingScreen.style.display = 'none';
+    loadingScreen.remove();
+    document.body.classList.remove('loading-active');
 })
 
 // Define color palettes
