@@ -15,6 +15,30 @@ body, html {
     padding: 0;
 }
 
+#loading-container {
+    position: absolute;
+    z-index: 5;
+    width: 100vw;
+    height: 100vh;
+    background-color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+#loading-image {
+    width: min(30vw, 300px);
+    opacity: 1;
+    transition: opacity 0.5s ease-in;
+}
+
+#loading-container.loading-fade-out,
+#loading-image.loading-fade-out {
+    opacity: 0;
+}
+
 .hero-container {
     position: relative;
     width: 100vw;

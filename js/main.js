@@ -8,13 +8,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { GrainShader } from './shaders/GrainShader.js';
 
-// Define color palettes
-const colors = [
-    ["#24479e", "#ebe0ca", "#eb580e"]
-];
-// Select a random palette and convert to THREE.Color
-const palette = colors[Math.floor(Math.random() * colors.length)].map(color => new THREE.Color(color));
-
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export default class Sketch {
@@ -157,7 +150,7 @@ export default class Sketch {
         this.time += delta;
         this.material.uniforms.time.value = this.time;
 
-        // FPS calculation and logging
+        // Debug FPS calculation and logging
         this.fpsFrameCount++;
         this.fpsElapsed += delta;
         if (this.fpsElapsed >= 1) {
@@ -173,6 +166,35 @@ export default class Sketch {
         this.composer.render(this.scene, this.camera);
     }
 }
+
+const loadingScreen = document.getElementById('loading-container');
+const loadingImage = document.getElementById('loading-image');
+
+// When the window finishes loading, start the fade-out sequence
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        loadingImage.classList.add('loading-fade-out');
+    }, 2000);
+    
+    setTimeout(() => {
+        loadingScreen.classList.add('loading-fade-out');
+        setTimeout(() => {
+            loadingScreen.remove();
+        }, 500); // Match the CSS transition duration
+    }, 2500);
+});
+
+// Temp for testing
+window.addEventListener('click', () => {
+    loadingScreen.style.display = 'none';
+})
+
+// Define color palettes
+const colors = [
+    ["#24479e", "#ebe0ca", "#eb580e"]
+];
+// Select a random palette and convert to THREE.Color
+const palette = colors[Math.floor(Math.random() * colors.length)].map(color => new THREE.Color(color));
 
 // Instantiate the Sketch class and attach to DOM element with id 'three-container'
 new Sketch({
