@@ -180,6 +180,7 @@ window.addEventListener('load', () => {
         loadingScreen.classList.add('loading-fade-out');
         setTimeout(() => {
             loadingScreen.remove();
+            document.body.classList.remove('loading-active'); // Allow scrolling
         }, 500); // Match the CSS transition duration
     }, 2500);
 });
