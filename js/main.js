@@ -1,20 +1,20 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import fragment from './shaders/fragment.glsl';
-import vertex from './shaders/vertex.glsl';
-
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { GrainShader } from './shaders/GrainShader.js';
-
+import fragment from "./shaders/fragment.glsl";
+import vertex from "./shaders/vertex.glsl";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { GrainShader } from "./shaders/GrainShader.js";
 
 // Define color palettes
 const colors = [
     ["#24479e", "#ebe0ca", "#eb580e"]
 ];
 // Select a random palette and convert to THREE.Color
-const palette = colors[Math.floor(Math.random() * colors.length)].map(color => new THREE.Color(color));
+const palette = colors[Math.floor(Math.random() * colors.length)].map(
+    (color) => new THREE.Color(color)
+);
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export default class Sketch {
@@ -54,7 +54,7 @@ export default class Sketch {
         this.clock = new THREE.Clock();
         this.time = 0;
 
-        this.isPlaying = true;  // Animation state
+        this.isPlaying = true; // Animation state
 
         // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
@@ -69,14 +69,14 @@ export default class Sketch {
 
         // Mouse movement event to update shader uniform
         const heroContainer = this.container.parentElement; // .hero-container
-        heroContainer.addEventListener('mousemove', (e) => {
+        heroContainer.addEventListener("mousemove", (e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
             const y = 1.0 - (e.clientY - rect.top) / rect.height;
             this.material.uniforms.mouse.value.set(x, y);
         });
     }
-    
+
     // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
     initPost() {
         this.composer = new EffectComposer(this.renderer);
@@ -84,7 +84,7 @@ export default class Sketch {
 
         // Add grain shader as a postprocessing effect
         const effect1 = new ShaderPass(GrainShader);
-        effect1.uniforms['scale'].value = 4;
+        effect1.uniforms["scale"].value = 4;
         this.composer.addPass(effect1);
     }
 
@@ -108,17 +108,17 @@ export default class Sketch {
         // Create custom shader material
         this.material = new THREE.ShaderMaterial({
             extensions: {
-                derivatives: "#extension GL_OES_standard_derivatives : enable"
+                derivatives: "#extension GL_OES_standard_derivatives : enable",
             },
             side: THREE.DoubleSide,
             uniforms: {
                 time: { value: 0 },
                 resolution: { value: new THREE.Vector4() },
                 uColor: { value: palette },
-                mouse: { value: new THREE.Vector2(0, 0) }
+                mouse: { value: new THREE.Vector2(0, 0) },
             },
             vertexShader: vertex,
-            fragmentShader: fragment
+            fragmentShader: fragment,
         });
 
         // Create a plane geometry and mesh
@@ -146,7 +146,7 @@ export default class Sketch {
     //         this.render()
     //     }
     // }
-    
+
     // Main render loop. Updates uniforms, handles FPS, and renders the scene.
     render() {
         if (!this.isPlaying) return;
@@ -162,7 +162,7 @@ export default class Sketch {
         this.fpsElapsed += delta;
         if (this.fpsElapsed >= 1) {
             const fps = this.fpsFrameCount / this.fpsElapsed;
-            console.log('FPS:', fps.toFixed(1));
+            console.log("FPS:", fps.toFixed(1));
             this.fpsFrameCount = 0;
             this.fpsElapsed = 0;
         }
@@ -193,16 +193,16 @@ class CustomScrollbar {
 
     createScrollbar() {
         // Create scrollbar container
-        this.scrollbarElement = document.createElement('div');
-        this.scrollbarElement.className = 'custom-scrollbar';
+        this.scrollbarElement = document.createElement("div");
+        this.scrollbarElement.className = "custom-scrollbar";
 
         // Create scrollbar track
-        this.trackElement = document.createElement('div');
-        this.trackElement.className = 'custom-scrollbar-track';
+        this.trackElement = document.createElement("div");
+        this.trackElement.className = "custom-scrollbar-track";
 
         // Create scrollbar thumb
-        this.thumbElement = document.createElement('div');
-        this.thumbElement.className = 'custom-scrollbar-thumb';
+        this.thumbElement = document.createElement("div");
+        this.thumbElement.className = "custom-scrollbar-thumb";
 
         this.scrollbarElement.appendChild(this.trackElement);
         this.scrollbarElement.appendChild(this.thumbElement);
@@ -214,47 +214,54 @@ class CustomScrollbar {
 
     setupScrollbarEvents() {
         // Hover events for scrollbar visibility
-        this.scrollbarElement.addEventListener('mouseenter', () => {
+        this.scrollbarElement.addEventListener("mouseenter", () => {
             this.showScrollbar();
             this.clearHideTimeout();
         });
 
-        this.scrollbarElement.addEventListener('mouseleave', () => {
+        this.scrollbarElement.addEventListener("mouseleave", () => {
             if (!this.isDragging) {
                 this.scheduleHide();
             }
         });
 
         // Click on track to jump
-        this.trackElement.addEventListener('click', (e) => {
+        this.trackElement.addEventListener("click", (e) => {
             if (e.target === this.trackElement) {
                 const rect = this.trackElement.getBoundingClientRect();
                 const clickY = e.clientY - rect.top;
                 const percentage = clickY / rect.height;
-                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                const maxScroll =
+                    document.documentElement.scrollHeight - window.innerHeight;
                 window.scrollTo({
                     top: percentage * maxScroll,
-                    behavior: 'smooth'
+                    behavior: "smooth",
                 });
             }
         });
 
         // Thumb dragging
-        this.thumbElement.addEventListener('mousedown', this.startDrag.bind(this));
-        document.addEventListener('mousemove', this.drag.bind(this));
-        document.addEventListener('mouseup', this.endDrag.bind(this));
+        this.thumbElement.addEventListener(
+            "mousedown",
+            this.startDrag.bind(this)
+        );
+        document.addEventListener("mousemove", this.drag.bind(this));
+        document.addEventListener("mouseup", this.endDrag.bind(this));
 
         // Prevent text selection while dragging
-        this.thumbElement.addEventListener('selectstart', (e) => e.preventDefault());
+        this.thumbElement.addEventListener("selectstart", (e) =>
+            e.preventDefault()
+        );
     }
 
     startDrag(e) {
         e.preventDefault();
         this.isDragging = true;
         this.dragStartY = e.clientY;
-        this.dragStartScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        this.thumbElement.classList.add('dragging');
-        document.body.style.userSelect = 'none';
+        this.dragStartScrollTop =
+            window.pageYOffset || document.documentElement.scrollTop;
+        this.thumbElement.classList.add("dragging");
+        document.body.style.userSelect = "none";
         this.clearHideTimeout();
     }
 
@@ -269,7 +276,10 @@ class CustomScrollbar {
         const scrollableTrackHeight = this.trackHeight - this.thumbHeight;
 
         const scrollDelta = (deltaY / scrollableTrackHeight) * maxScroll;
-        const newScrollTop = Math.max(0, Math.min(maxScroll, this.dragStartScrollTop + scrollDelta));
+        const newScrollTop = Math.max(
+            0,
+            Math.min(maxScroll, this.dragStartScrollTop + scrollDelta)
+        );
 
         window.scrollTo(0, newScrollTop);
     }
@@ -278,15 +288,16 @@ class CustomScrollbar {
         if (!this.isDragging) return;
 
         this.isDragging = false;
-        this.thumbElement.classList.remove('dragging');
-        document.body.style.userSelect = '';
+        this.thumbElement.classList.remove("dragging");
+        document.body.style.userSelect = "";
         this.scheduleHide();
     }
 
     updateThumb() {
         const documentHeight = document.documentElement.scrollHeight;
         const windowHeight = window.innerHeight;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollTop =
+            window.pageYOffset || document.documentElement.scrollTop;
 
         // Only show scrollbar if content is scrollable
         if (documentHeight <= windowHeight) {
@@ -296,10 +307,14 @@ class CustomScrollbar {
 
         // Calculate thumb height and position
         this.trackHeight = windowHeight;
-        this.thumbHeight = Math.max((windowHeight / documentHeight) * windowHeight, 30);
+        this.thumbHeight = Math.max(
+            (windowHeight / documentHeight) * windowHeight,
+            30
+        );
         const maxScrollTop = documentHeight - windowHeight;
         const scrollPercentage = scrollTop / maxScrollTop;
-        const thumbTop = scrollPercentage * (this.trackHeight - this.thumbHeight);
+        const thumbTop =
+            scrollPercentage * (this.trackHeight - this.thumbHeight);
 
         this.thumbElement.style.height = `${this.thumbHeight}px`;
         this.thumbElement.style.top = `${thumbTop}px`;
@@ -308,14 +323,14 @@ class CustomScrollbar {
     showScrollbar() {
         if (!this.isVisible) {
             this.isVisible = true;
-            this.scrollbarElement.classList.add('visible');
+            this.scrollbarElement.classList.add("visible");
         }
     }
 
     hideScrollbar() {
         if (this.isVisible && !this.isDragging) {
             this.isVisible = false;
-            this.scrollbarElement.classList.remove('visible');
+            this.scrollbarElement.classList.remove("visible");
         }
     }
 
@@ -335,19 +350,31 @@ class CustomScrollbar {
 
     init() {
         // Listen for scroll events
-        window.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+        window.addEventListener("scroll", this.handleScroll.bind(this), {
+            passive: true,
+        });
 
         // Listen for wheel events (mouse wheel)
-        window.addEventListener('wheel', this.handleScroll.bind(this), { passive: true });
+        window.addEventListener("wheel", this.handleScroll.bind(this), {
+            passive: true,
+        });
 
         // Listen for touch events (mobile scrolling)
-        window.addEventListener('touchstart', this.handleScroll.bind(this), { passive: true });
-        window.addEventListener('touchmove', this.handleScroll.bind(this), { passive: true });
+        window.addEventListener("touchstart", this.handleScroll.bind(this), {
+            passive: true,
+        });
+        window.addEventListener("touchmove", this.handleScroll.bind(this), {
+            passive: true,
+        });
 
         // Listen for resize to update thumb
-        window.addEventListener('resize', () => {
-            this.updateThumb();
-        }, { passive: true });
+        window.addEventListener(
+            "resize",
+            () => {
+                this.updateThumb();
+            },
+            { passive: true }
+        );
 
         // Listen for content changes
         const observer = new MutationObserver(() => {
@@ -369,8 +396,8 @@ class CustomScrollbar {
 }
 
 // Loading screen management
-const loadingScreen = document.getElementById('loading-container');
-const loadingImage = document.getElementById('loading-image');
+const loadingScreen = document.getElementById("loading-container");
+const loadingImage = document.getElementById("loading-image");
 let loadingComplete = false;
 
 // Function to handle loading screen removal
@@ -379,47 +406,47 @@ function removeLoadingScreen() {
     loadingComplete = true;
 
     // Start the fade-out sequence
-    loadingImage.classList.add('loading-fade-out');
+    loadingImage.classList.add("loading-fade-out");
 
     setTimeout(() => {
-        loadingScreen.classList.add('loading-fade-out');
+        loadingScreen.classList.add("loading-fade-out");
 
         setTimeout(() => {
             if (loadingScreen && loadingScreen.parentNode) {
                 loadingScreen.remove();
             }
-            document.body.classList.remove('loading-active'); // Allow scrolling
+            document.body.classList.remove("loading-active"); // Allow scrolling
         }, 500);
     }, 500);
 }
 
 // Prevent browser from restoring scroll position
-if ('scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
 }
 // Scroll to top of page on reload
 window.scrollTo(0, 0);
 
 // When the window finishes loading, wait a bit then remove loading screen
-window.addEventListener('load', () => {
+window.addEventListener("load", () => {
     setTimeout(() => {
         removeLoadingScreen();
     }, 2000);
 });
 
 // Temp for testing
-window.addEventListener('click', () => {
+window.addEventListener("click", () => {
     if (!loadingComplete) {
         removeLoadingScreen();
     }
 });
 
 // Initialize the Three.js sketch and custom scrollbar after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    const threeContainer = document.getElementById('three-container');
+document.addEventListener("DOMContentLoaded", () => {
+    const threeContainer = document.getElementById("three-container");
     if (threeContainer) {
         new Sketch({
-            dom: threeContainer
+            dom: threeContainer,
         });
     }
 

@@ -61,10 +61,10 @@ body.loading-active .custom-scrollbar {
     width: 8px;
     background: rgb(250, 250, 250, 0.1);
     border-radius: 4px;
-    transition: 
-            background 0.3s ease, 
-            width 0.3s ease, 
-            right 0.3s ease;
+    transition:
+        background 0.3s ease,
+        width 0.3s ease,
+        right 0.3s ease;
     cursor: grab;
     min-height: 30px;
 }
@@ -87,7 +87,6 @@ body.loading-active .custom-scrollbar {
     --primary-white: #fafafa;
     --secondary-white: #f5f5f5;
 }
-
 
 body.loading-active {
     position: fixed;
@@ -148,7 +147,11 @@ body.loading-active {
     width: 100%;
     height: 80px;
     z-index: 2;
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--primary-black) 100%);
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
 }
 
 .hero-text-container {
