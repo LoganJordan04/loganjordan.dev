@@ -18,75 +18,15 @@ body {
     display: none;
 }
 
-.custom-scrollbar {
-    position: fixed;
-    top: 0;
-    right: 4px;
-    width: 10px;
-    height: 100vh;
-    z-index: 9999;
-    pointer-events: auto;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    cursor: pointer;
-    padding: 2px;
-}
-
-body.loading-active .custom-scrollbar {
-    display: none;
-}
-
-.custom-scrollbar.visible,
-.custom-scrollbar:hover {
-    opacity: 1;
-}
-
-.custom-scrollbar-track {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    opacity: 0;
-}
-
-.custom-scrollbar:hover .custom-scrollbar-track {
-    opacity: 1;
-}
-
-.custom-scrollbar-thumb {
-    position: absolute;
-    right: 2px;
-    width: 8px;
-    background: rgb(250, 250, 250, 0.1);
-    border-radius: 4px;
-    transition:
-        background 0.3s ease,
-        width 0.3s ease,
-        right 0.3s ease;
-    cursor: grab;
-    min-height: 30px;
-}
-
-.custom-scrollbar-thumb:hover {
-    background: rgb(250, 250, 250, 0.2);
-    width: 10px;
-    right: 1px;
-}
-
-.custom-scrollbar-thumb:active,
-.custom-scrollbar-thumb.dragging {
-    background: rgba(250, 250, 250, 0.2);
-    cursor: grabbing;
-}
-
 :root {
     --primary-black: #0a0a0a;
     --secondary-black: #171717;
     --primary-white: #fafafa;
     --secondary-white: #f5f5f5;
 }
+
+
+/* region Loading Screen */
 
 body.loading-active {
     position: fixed;
@@ -95,6 +35,10 @@ body.loading-active {
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+
+body.loading-active .custom-scrollbar {
+    display: none;
 }
 
 #loading-container {
@@ -131,6 +75,97 @@ body.loading-active {
     opacity: 0;
 }
 
+/* endregion */
+
+
+/* region Custom Scrollbar */
+
+.custom-scrollbar {
+    position: fixed;
+    top: 0;
+    right: 4px;
+    width: 10px;
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.custom-scrollbar.visible,
+.custom-scrollbar:hover {
+    opacity: 1;
+}
+
+.custom-scrollbar-track {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    opacity: 0;
+}
+
+.custom-scrollbar:hover .custom-scrollbar-track {
+    opacity: 1;
+}
+
+.custom-scrollbar-thumb {
+    position: absolute;
+    right: 2px;
+    width: 8px;
+    background: rgb(250, 250, 250, 0.1);
+    border-radius: 4px;
+    transition: background 0.3s ease,
+    width 0.3s ease,
+    right 0.3s ease;
+    cursor: grab;
+    min-height: 30px;
+}
+
+.custom-scrollbar-thumb:hover {
+    background: rgb(250, 250, 250, 0.2);
+    width: 10px;
+    right: 1px;
+}
+
+.custom-scrollbar-thumb:active,
+.custom-scrollbar-thumb.dragging {
+    background: rgba(250, 250, 250, 0.2);
+    cursor: grabbing;
+}
+
+/* endregion */
+
+
+/* region Typography */
+
+.hero-title {
+    font-family: "Figtree", sans-serif;
+    font-weight: 600;
+    font-size: min(10vw, 6.25rem);
+    letter-spacing: 3px;
+    margin: 0;
+    color: var(--primary-white);
+}
+
+.hero-subtitle {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    font-size: min(3.25vw, 2rem);
+    letter-spacing: 0.6px;
+    margin: 0.25em 0 0 0;
+    color: var(--secondary-white);
+}
+
+/* endregion */
+
+
+/* region Layout */
+
 .hero {
     position: relative;
     display: flex;
@@ -139,6 +174,29 @@ body.loading-active {
     justify-content: center;
     min-height: 100vh;
 }
+
+.hero-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    z-index: 1;
+    text-align: center;
+}
+
+.section-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    background-color: var(--primary-black);
+}
+
+/* endregion */
+
+
+/* region Three.js Container */
 
 #three-container {
     position: absolute;
@@ -165,38 +223,4 @@ body.loading-active {
     );
 }
 
-.hero-text-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    z-index: 1;
-    text-align: center;
-}
-
-.hero-title {
-    font-family: "Figtree", sans-serif;
-    font-weight: 600;
-    font-size: min(10vw, 6.25rem);
-    letter-spacing: 3px;
-    margin: 0;
-    color: var(--primary-white);
-}
-
-.hero-subtitle {
-    font-family: "Open Sans", sans-serif;
-    font-weight: 400;
-    font-size: min(3.25vw, 2rem);
-    letter-spacing: 0.6px;
-    margin: 0.25em 0 0 0;
-    color: var(--secondary-white);
-}
-
-.section-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 500px;
-    background-color: var(--primary-black);
-}
+/* endregion */
