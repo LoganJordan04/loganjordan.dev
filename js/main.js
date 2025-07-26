@@ -66,7 +66,7 @@ export default class Sketch {
         // this.fpsElapsed = 0;
 
         // Mouse movement event to update shader uniform
-        const heroContainer = this.container.parentElement; // .hero-container
+        const heroContainer = this.container.parentElement;
         heroContainer.addEventListener("mousemove", (e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
@@ -124,16 +124,7 @@ export default class Sketch {
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
-
-    // addLights() {
-    //     const light1 = new THREE.AmbientLight(0xffffff, 0.5);
-    //     this.scene.add(light1);
-    //
-    //     const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    //     light2.position.set(0.5, 0, 0.866);  // ~60º
-    //     this.scene.add(light2);
-    // }
-    //
+    
     // stop() {
     //     this.isPlaying = false;
     // }
@@ -407,7 +398,6 @@ class LoadingManager {
     }
 
     init() {
-        // Try to play the video
         this.playVideo();
 
         // Set timer to remove loading screen
@@ -451,7 +441,6 @@ class LoadingManager {
         }
 
         try {
-            // Only reset currentTime if we haven't started playing yet
             if (!this.hasStartedPlaying) {
                 this.loadingAnimation.currentTime = 0;
             }
@@ -474,8 +463,7 @@ class LoadingManager {
             }
         } catch (error) {
             console.log("Animation autoplay blocked:", error);
-
-            // Only set up interaction listeners if it haven't started playing
+            
             if (!this.hasStartedPlaying) {
                 // Try to play on first user interaction
                 const playOnInteraction = async () => {
@@ -545,19 +533,16 @@ class LoadingManager {
 function initializeApp() {
     // Force scroll to top
     window.scrollTo(0, 0);
-
-    // Initialize loading manager
+    
     new LoadingManager();
-
-    // Initialize Three.js sketch
+    
     const threeContainer = document.getElementById("three-container");
     if (threeContainer) {
         new Sketch({
             dom: threeContainer,
         });
     }
-
-    // Initialize custom scrollbar
+    
     new CustomScrollbar();
 }
 
