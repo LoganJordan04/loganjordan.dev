@@ -94,29 +94,40 @@ body.loading-active {
     left: 0;
     width: 100%;
     height: 100%;
+    overflow: hidden;
 }
 
 #loading-container {
-    position: absolute;
-    z-index: 5;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100vh;
     background-color: var(--primary-black);
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 10000;
     opacity: 1;
     transition: opacity 0.5s ease-out;
+    will-change: opacity;
 }
 
-#loading-image {
+#loading-animation {
     width: min(30vw, 250px);
+    height: auto;
     opacity: 1;
-    transition: opacity 0.5s ease-in;
+    transition: opacity 0.3s ease-out;
+    will-change: opacity;
+    pointer-events: none;
 }
 
-#loading-container.loading-fade-out,
-#loading-image.loading-fade-out {
+#loading-container.loading-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loading-animation.loading-fade-out {
     opacity: 0;
 }
 

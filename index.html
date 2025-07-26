@@ -43,7 +43,18 @@
     </head>
     <body class="loading-active">
         <div id="loading-container">
-            <img id="loading-image" src="icons/signature-light.svg" />
+            <video
+                autoplay
+                muted
+                playsinline
+                preload="auto"
+                id="loading-animation"
+            >
+                <source
+                    src="images/signature-animation.webm"
+                    type="video/webm"
+                />
+            </video>
         </div>
 
         <main id="main-content" role="main">
