@@ -414,7 +414,7 @@ class LoadingManager {
         this.loadingTimer = setTimeout(() => {
             this.removeLoadingScreen();
         }, this.loadingDuration);
-        
+
         // Dev: Click to skip loading screen
         this.setupSkipFeature();
     }
@@ -437,16 +437,16 @@ class LoadingManager {
             this.removeLoadingScreen(true);
 
             // Remove the event listener
-            this.loadingScreen.removeEventListener('click', skipLoading);
+            this.loadingScreen.removeEventListener("click", skipLoading);
         };
 
         // Add click listener to loading screen
-        this.loadingScreen.addEventListener('click', skipLoading);
+        this.loadingScreen.addEventListener("click", skipLoading);
     }
 
     async playVideo() {
         if (!this.loadingAnimation) {
-            console.log('signature-animation.webm not found!');
+            console.log("signature-animation.webm not found!");
             return;
         }
 
@@ -464,12 +464,16 @@ class LoadingManager {
                 this.hasStartedPlaying = true;
 
                 // Add event listener to prevent restarting
-                this.loadingAnimation.addEventListener('playing', () => {
-                    this.hasStartedPlaying = true;
-                }, { once: true });
+                this.loadingAnimation.addEventListener(
+                    "playing",
+                    () => {
+                        this.hasStartedPlaying = true;
+                    },
+                    { once: true }
+                );
             }
         } catch (error) {
-            console.log('Animation autoplay blocked:', error);
+            console.log("Animation autoplay blocked:", error);
 
             // Only set up interaction listeners if it haven't started playing
             if (!this.hasStartedPlaying) {
@@ -479,19 +483,22 @@ class LoadingManager {
                         // Don't reset currentTime on retry
                         await this.loadingAnimation.play();
                         this.hasStartedPlaying = true;
-                        console.log('Animation started after user interaction');
+                        console.log("Animation started after user interaction");
                     } catch (e) {
-                        console.log('Animation still cannot play:', e);
+                        console.log("Animation still cannot play:", e);
                     }
                     // Remove listeners after first attempt
-                    document.removeEventListener('click', playOnInteraction);
-                    document.removeEventListener('touchstart', playOnInteraction);
-                    document.removeEventListener('keydown', playOnInteraction);
+                    document.removeEventListener("click", playOnInteraction);
+                    document.removeEventListener(
+                        "touchstart",
+                        playOnInteraction
+                    );
+                    document.removeEventListener("keydown", playOnInteraction);
                 };
 
-                document.addEventListener('click', playOnInteraction);
-                document.addEventListener('touchstart', playOnInteraction);
-                document.addEventListener('keydown', playOnInteraction);
+                document.addEventListener("click", playOnInteraction);
+                document.addEventListener("touchstart", playOnInteraction);
+                document.addEventListener("keydown", playOnInteraction);
             }
         }
     }
@@ -511,7 +518,7 @@ class LoadingManager {
             document.body.classList.remove("loading-active");
             return;
         }
-        
+
         // Fade out the animation first
         if (this.loadingAnimation) {
             this.loadingAnimation.classList.add("loading-fade-out");
@@ -560,12 +567,12 @@ if ("scrollRestoration" in history) {
 }
 
 // Force scroll to top on page unload
-window.addEventListener('beforeunload', () => {
+window.addEventListener("beforeunload", () => {
     window.scrollTo(0, 0);
 });
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
+if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeApp);
 } else {
     // DOM already loaded
