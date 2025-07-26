@@ -8,9 +8,7 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { GrainShader } from "./shaders/GrainShader.js";
 
 // Define color palettes
-const colors = [
-    ["#24479e", "#ebe0ca", "#eb580e"]
-];
+const colors = [["#24479e", "#ebe0ca", "#eb580e"]];
 // Select a random palette and convert to THREE.Color
 const palette = colors[Math.floor(Math.random() * colors.length)].map(
     (color) => new THREE.Color(color)
@@ -64,8 +62,8 @@ export default class Sketch {
         this.setupResize();
 
         // FPS tracking variables
-        this.fpsFrameCount = 0;
-        this.fpsElapsed = 0;
+        // this.fpsFrameCount = 0;
+        // this.fpsElapsed = 0;
 
         // Mouse movement event to update shader uniform
         const heroContainer = this.container.parentElement; // .hero-container
@@ -158,14 +156,14 @@ export default class Sketch {
         this.material.uniforms.time.value = this.time;
 
         // Debug FPS calculation and logging
-        this.fpsFrameCount++;
-        this.fpsElapsed += delta;
-        if (this.fpsElapsed >= 1) {
-            const fps = this.fpsFrameCount / this.fpsElapsed;
-            console.log("FPS:", fps.toFixed(1));
-            this.fpsFrameCount = 0;
-            this.fpsElapsed = 0;
-        }
+        // this.fpsFrameCount++;
+        // this.fpsElapsed += delta;
+        // if (this.fpsElapsed >= 1) {
+        //     const fps = this.fpsFrameCount / this.fpsElapsed;
+        //     console.log("FPS:", fps.toFixed(1));
+        //     this.fpsFrameCount = 0;
+        //     this.fpsElapsed = 0;
+        // }
 
         requestAnimationFrame(this.render.bind(this));
         // Use composer for postprocessing; comment out for raw render
@@ -396,53 +394,155 @@ class CustomScrollbar {
 }
 
 // Loading screen management
-const loadingScreen = document.getElementById("loading-container");
-const loadingImage = document.getElementById("loading-image");
-let loadingComplete = false;
+class LoadingManager {
+    constructor() {
+        this.loadingScreen = document.getElementById("loading-container");
+        this.loadingAnimation = document.getElementById("loading-animation");
+        this.isComplete = false;
+        this.hasStartedPlaying = false;
+        this.loadingTimer = null;
+        this.loadingDuration = 4000;
 
-// Function to handle loading screen removal
-function removeLoadingScreen() {
-    if (loadingComplete) return;
-    loadingComplete = true;
-
-    // Start the fade-out sequence
-    loadingImage.classList.add("loading-fade-out");
-
-    setTimeout(() => {
-        loadingScreen.classList.add("loading-fade-out");
-
-        setTimeout(() => {
-            if (loadingScreen && loadingScreen.parentNode) {
-                loadingScreen.remove();
-            }
-            document.body.classList.remove("loading-active"); // Allow scrolling
-        }, 500);
-    }, 500);
-}
-
-// Prevent browser from restoring scroll position
-if ("scrollRestoration" in history) {
-    history.scrollRestoration = "manual";
-}
-// Scroll to top of page on reload
-window.scrollTo(0, 0);
-
-// When the window finishes loading, wait a bit then remove loading screen
-window.addEventListener("load", () => {
-    setTimeout(() => {
-        removeLoadingScreen();
-    }, 2000);
-});
-
-// Temp for testing
-window.addEventListener("click", () => {
-    if (!loadingComplete) {
-        removeLoadingScreen();
+        this.init();
     }
-});
 
-// Initialize the Three.js sketch and custom scrollbar after DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
+    init() {
+        // Try to play the video
+        this.playVideo();
+
+        // Set timer to remove loading screen
+        this.loadingTimer = setTimeout(() => {
+            this.removeLoadingScreen();
+        }, this.loadingDuration);
+        
+        // Dev: Click to skip loading screen
+        this.setupSkipFeature();
+    }
+
+    setupSkipFeature() {
+        if (!this.loadingScreen) return;
+
+        const skipLoading = (e) => {
+            // Prevent event from bubbling
+            e.stopPropagation();
+            e.preventDefault();
+
+            // Clear the timer
+            if (this.loadingTimer) {
+                clearTimeout(this.loadingTimer);
+                this.loadingTimer = null;
+            }
+
+            // Skip directly to removal
+            this.removeLoadingScreen(true);
+
+            // Remove the event listener
+            this.loadingScreen.removeEventListener('click', skipLoading);
+        };
+
+        // Add click listener to loading screen
+        this.loadingScreen.addEventListener('click', skipLoading);
+    }
+
+    async playVideo() {
+        if (!this.loadingAnimation) {
+            console.log('signature-animation.webm not found!');
+            return;
+        }
+
+        try {
+            // Only reset currentTime if we haven't started playing yet
+            if (!this.hasStartedPlaying) {
+                this.loadingAnimation.currentTime = 0;
+            }
+            this.loadingAnimation.muted = true;
+
+            const playPromise = this.loadingAnimation.play();
+
+            if (playPromise !== undefined) {
+                await playPromise;
+                this.hasStartedPlaying = true;
+
+                // Add event listener to prevent restarting
+                this.loadingAnimation.addEventListener('playing', () => {
+                    this.hasStartedPlaying = true;
+                }, { once: true });
+            }
+        } catch (error) {
+            console.log('Animation autoplay blocked:', error);
+
+            // Only set up interaction listeners if it haven't started playing
+            if (!this.hasStartedPlaying) {
+                // Try to play on first user interaction
+                const playOnInteraction = async () => {
+                    try {
+                        // Don't reset currentTime on retry
+                        await this.loadingAnimation.play();
+                        this.hasStartedPlaying = true;
+                        console.log('Animation started after user interaction');
+                    } catch (e) {
+                        console.log('Animation still cannot play:', e);
+                    }
+                    // Remove listeners after first attempt
+                    document.removeEventListener('click', playOnInteraction);
+                    document.removeEventListener('touchstart', playOnInteraction);
+                    document.removeEventListener('keydown', playOnInteraction);
+                };
+
+                document.addEventListener('click', playOnInteraction);
+                document.addEventListener('touchstart', playOnInteraction);
+                document.addEventListener('keydown', playOnInteraction);
+            }
+        }
+    }
+
+    removeLoadingScreen(skipFading = false) {
+        if (this.isComplete) {
+            return;
+        }
+
+        this.isComplete = true;
+
+        if (skipFading) {
+            // Skip fading animation and remove immediately
+            if (this.loadingScreen && this.loadingScreen.parentNode) {
+                this.loadingScreen.remove();
+            }
+            document.body.classList.remove("loading-active");
+            return;
+        }
+        
+        // Fade out the animation first
+        if (this.loadingAnimation) {
+            this.loadingAnimation.classList.add("loading-fade-out");
+        }
+
+        // Then fade out the container
+        setTimeout(() => {
+            if (this.loadingScreen) {
+                this.loadingScreen.classList.add("loading-fade-out");
+            }
+
+            // After fade animation completes, remove from DOM
+            setTimeout(() => {
+                if (this.loadingScreen && this.loadingScreen.parentNode) {
+                    this.loadingScreen.remove();
+                }
+                document.body.classList.remove("loading-active");
+            }, 500); // Wait for CSS transition
+        }, 300);
+    }
+}
+
+// Initialize when DOM is ready
+function initializeApp() {
+    // Force scroll to top
+    window.scrollTo(0, 0);
+
+    // Initialize loading manager
+    new LoadingManager();
+
+    // Initialize Three.js sketch
     const threeContainer = document.getElementById("three-container");
     if (threeContainer) {
         new Sketch({
@@ -452,4 +552,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize custom scrollbar
     new CustomScrollbar();
+}
+
+// Prevent browser from restoring scroll position
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+}
+
+// Force scroll to top on page unload
+window.addEventListener('beforeunload', () => {
+    window.scrollTo(0, 0);
 });
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initializeApp);
+} else {
+    // DOM already loaded
+    initializeApp();
+}
