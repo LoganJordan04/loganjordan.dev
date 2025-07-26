@@ -114,7 +114,7 @@ body.loading-active {
 }
 
 #loading-animation {
-    width: min(30vw, 250px);
+    width: min(130vw, 1080px);
     height: auto;
     opacity: 1;
     transition: opacity 0.3s ease-out;
