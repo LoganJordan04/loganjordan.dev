@@ -1,6 +1,4 @@
-import {
-    Vector2
-} from 'three';
+import { Vector2 } from "three";
 
 /**
  * @module DotScreenShader
@@ -14,17 +12,17 @@ import {
  * @type {ShaderMaterial~Shader}
  */
 const GrainShader = {
-    name: 'GrainShader',
+    name: "GrainShader",
 
     uniforms: {
-        'tDiffuse': { value: null },
-        'tSize': { value: new Vector2( 256, 256 ) },
-        'center': { value: new Vector2( 0.5, 0.5 ) },
-        'angle': { value: 1.57 },
-        'scale': { value: 1.0 }
+        tDiffuse: { value: null },
+        tSize: { value: new Vector2(256, 256) },
+        center: { value: new Vector2(0.5, 0.5) },
+        angle: { value: 1.57 },
+        scale: { value: 1.0 },
     },
 
-    vertexShader: /* glsl */`
+    vertexShader: /* glsl */ `
 		varying vec2 vUv;
 
 		void main() {
@@ -32,7 +30,7 @@ const GrainShader = {
 			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 		}`,
 
-    fragmentShader: /* glsl */`
+    fragmentShader: /* glsl */ `
 		uniform vec2 center;
 		uniform float angle;
 		uniform float scale;
@@ -70,7 +68,7 @@ const GrainShader = {
 			color.rgb += random(uvrandom) * 0.05;
 			
 			gl_FragColor = color;
-		}`
+		}`,
 };
 
 export { GrainShader };

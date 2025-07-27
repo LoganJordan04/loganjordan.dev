@@ -4,81 +4,225 @@
     box-sizing: border-box;
 }
 
+html {
+    scrollbar-width: none;
+}
+
 body {
     margin: 0;
     padding: 0;
+    -ms-overflow-style: none;
 }
 
-body, html {
+::-webkit-scrollbar {
+    display: none;
+}
+
+:root {
+    --primary-black: #0a0a0a;
+    --secondary-black: #171717;
+    --primary-white: #fafafa;
+    --secondary-white: #f5f5f5;
+}
+
+
+/* region Loading Screen */
+
+body.loading-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
     height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-#loading-container {
-    position: absolute;
-    z-index: 5;
-    width: 100vw;
-    height: 100vh;
-    background-color: #111;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-    transition: opacity 0.5s ease-out;
-}
-
-#loading-image {
-    width: min(30vw, 250px);
-    opacity: 1;
-    transition: opacity 0.5s ease-in;
-}
-
-#loading-container.loading-fade-out,
-#loading-image.loading-fade-out {
-    opacity: 0;
-}
-
-.hero-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
     overflow: hidden;
 }
 
-#three-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
+body.loading-active .custom-scrollbar {
+    display: none;
 }
 
-.hero-text {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    color: #fefefe;
+#loading-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: var(--primary-black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+    will-change: opacity;
 }
+
+#loading-animation {
+    width: min(130vw, 1080px);
+    height: auto;
+    opacity: 1;
+    transition: opacity 0.3s ease-out;
+    will-change: opacity;
+    pointer-events: none;
+}
+
+#loading-container.loading-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loading-animation.loading-fade-out {
+    opacity: 0;
+}
+
+/* endregion */
+
+
+/* region Custom Scrollbar */
+
+.custom-scrollbar {
+    position: fixed;
+    top: 0;
+    right: 4px;
+    width: 10px;
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.custom-scrollbar.visible,
+.custom-scrollbar:hover {
+    opacity: 1;
+}
+
+.custom-scrollbar-track {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    opacity: 0;
+}
+
+.custom-scrollbar:hover .custom-scrollbar-track {
+    opacity: 1;
+}
+
+.custom-scrollbar-thumb {
+    position: absolute;
+    right: 2px;
+    width: 8px;
+    background: rgb(250, 250, 250, 0.1);
+    border-radius: 4px;
+    transition: background 0.3s ease,
+    width 0.3s ease,
+    right 0.3s ease;
+    cursor: grab;
+    min-height: 30px;
+}
+
+.custom-scrollbar-thumb:hover {
+    background: rgb(250, 250, 250, 0.2);
+    width: 10px;
+    right: 1px;
+}
+
+.custom-scrollbar-thumb:active,
+.custom-scrollbar-thumb.dragging {
+    background: rgba(250, 250, 250, 0.2);
+    cursor: grabbing;
+}
+
+/* endregion */
+
+
+/* region Typography */
 
 .hero-title {
     font-family: "Figtree", sans-serif;
     font-weight: 600;
-    font-size: min(10vw, 6.25rem);
-    letter-spacing: 3px;
+    font-size: clamp(2.5rem, 9.8vw,9.375rem);
+    letter-spacing: 0.18rem;
     margin: 0;
+    color: var(--primary-white);
+    cursor: default;
 }
 
 .hero-subtitle {
     font-family: "Open Sans", sans-serif;
     font-weight: 400;
-    font-size: min(3.25vw, 2rem);
-    letter-spacing: 0.6px;
-    margin: 0.25em 0 0 0;
-    color: #faf9f6;
+    font-size: clamp(1rem, 2.5vw, 2.5rem);
+    letter-spacing: 0.04rem;
+    margin: 0.2em 0 0 0;
+    color: var(--secondary-white);
+    cursor: default;
 }
+
+/* endregion */
+
+
+/* region Layout */
+
+.hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.hero-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    z-index: 1;
+    text-align: center;
+}
+
+.section-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    background-color: var(--primary-black);
+}
+
+/* endregion */
+
+
+/* region Three.js Container */
+
+#three-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 110vh;
+    z-index: 0;
+    overflow: hidden;
+}
+
+#three-container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 80px;
+    z-index: 2;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
+}
+
+/* endregion */
