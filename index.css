@@ -64,6 +64,7 @@ body.loading-active .custom-scrollbar {
     transition: opacity 0.3s ease-out;
     will-change: opacity;
     pointer-events: none;
+    mix-blend-mode: screen;
 }
 
 #loading-container.loading-fade-out {
