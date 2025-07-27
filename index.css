@@ -146,19 +146,21 @@ body.loading-active .custom-scrollbar {
 .hero-title {
     font-family: "Figtree", sans-serif;
     font-weight: 600;
-    font-size: min(10vw, 6.25rem);
-    letter-spacing: 3px;
+    font-size: clamp(2.5rem, 9.8vw,9.375rem);
+    letter-spacing: 0.18rem;
     margin: 0;
     color: var(--primary-white);
+    cursor: default;
 }
 
 .hero-subtitle {
     font-family: "Open Sans", sans-serif;
     font-weight: 400;
-    font-size: min(3.25vw, 2rem);
-    letter-spacing: 0.6px;
-    margin: 0.25em 0 0 0;
+    font-size: clamp(1rem, 2.5vw, 2.5rem);
+    letter-spacing: 0.04rem;
+    margin: 0.2em 0 0 0;
     color: var(--secondary-white);
+    cursor: default;
 }
 
 /* endregion */
