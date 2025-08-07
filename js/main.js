@@ -124,7 +124,7 @@ export default class Sketch {
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
-    
+
     // stop() {
     //     this.isPlaying = false;
     // }
@@ -463,7 +463,7 @@ class LoadingManager {
             }
         } catch (error) {
             console.log("Animation autoplay blocked:", error);
-            
+
             if (!this.hasStartedPlaying) {
                 // Try to play on first user interaction
                 const playOnInteraction = async () => {
@@ -533,16 +533,16 @@ class LoadingManager {
 function initializeApp() {
     // Force scroll to top
     window.scrollTo(0, 0);
-    
+
     new LoadingManager();
-    
+
     const threeContainer = document.getElementById("three-container");
     if (threeContainer) {
         new Sketch({
             dom: threeContainer,
         });
     }
-    
+
     new CustomScrollbar();
 
     // Drag functionality
