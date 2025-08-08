@@ -650,7 +650,7 @@ class NavManager {
         if (!targetSection) return;
 
         // Calculate offset for better positioning
-        let offset = 0;
+        let offset;
 
         // Special offset for hero section (scroll to very top)
         if (sectionId === 'hero') {
@@ -686,6 +686,95 @@ class NavManager {
     }
 }
 
+class HeaderManager {
+    constructor() {
+        this.header = document.getElementById('header');
+        this.lastScrollY = window.pageYOffset;
+        this.scrollThreshold = 100; // Minimum scroll distance to trigger hide/show
+        this.isHeaderVisible = true;
+        this.isHovering = false;
+        this.scrollDirection = 'up';
+        this.ticking = false;
+
+        this.init();
+    }
+
+    init() {
+        if (!this.header) return;
+
+        // Add CSS class for transitions
+        this.header.classList.add('header-auto-hide');
+
+        // Setup scroll listener
+        window.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+
+        // Setup hover listeners
+        this.header.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
+        this.header.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+    }
+
+    handleScroll() {
+        if (!this.ticking) {
+            requestAnimationFrame(this.updateHeader.bind(this));
+            this.ticking = true;
+        }
+    }
+
+    updateHeader() {
+        const currentScrollY = window.pageYOffset;
+
+        // Determine scroll direction
+        if (currentScrollY > this.lastScrollY) {
+            this.scrollDirection = 'down';
+        } else if (currentScrollY < this.lastScrollY) {
+            this.scrollDirection = 'up';
+        }
+
+        // Show/hide header based on scroll direction and position
+        if (currentScrollY <= this.scrollThreshold) {
+            // Always show header at the top
+            this.showHeader();
+        } else if (this.scrollDirection === 'down' && !this.isHovering) {
+            // Hide header when scrolling down (unless hovering)
+            this.hideHeader();
+        } else if (this.scrollDirection === 'up') {
+            // Show header when scrolling up
+            this.showHeader();
+        }
+
+        this.lastScrollY = currentScrollY;
+        this.ticking = false;
+    }
+
+    handleMouseEnter() {
+        this.isHovering = true;
+        this.showHeader();
+    }
+
+    handleMouseLeave() {
+        this.isHovering = false;
+
+        // If we're past the threshold and scrolling down, hide the header
+        if (window.pageYOffset > this.scrollThreshold && this.scrollDirection === 'down') {
+            this.hideHeader();
+        }
+    }
+
+    showHeader() {
+        if (!this.isHeaderVisible) {
+            this.header.classList.remove('header-hidden');
+            this.isHeaderVisible = true;
+        }
+    }
+
+    hideHeader() {
+        if (this.isHeaderVisible) {
+            this.header.classList.add('header-hidden');
+            this.isHeaderVisible = false;
+        }
+    }
+}
+
 // Initialize when DOM is ready
 function initializeApp() {
     // Force scroll to top
@@ -702,6 +791,7 @@ function initializeApp() {
 
     new CustomScrollbar();
     new NavManager();
+    new HeaderManager();
 
     // Drag functionality
     // (function() {

@@ -12,6 +12,10 @@ body {
     margin: 0;
     padding: 0;
     -ms-overflow-style: none;
+    font-family: "Open Sans", sans-serif;
+    color: var(--primary-white);
+    background-color: var(--primary-black);
+    letter-spacing: 0.02em;
 }
 
 ::-webkit-scrollbar {
@@ -141,11 +145,21 @@ body.loading-active .custom-scrollbar {
 
 /* region Typography */
 
+ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+a {
+    text-decoration: none;
+}
+
 .hero-title {
     font-family: "Figtree", sans-serif;
     font-weight: 600;
     font-size: clamp(5rem, 9.8vw, 9.375rem);
-    letter-spacing: 0.18rem;
+    letter-spacing: 0.03em;
     line-height: 0.95;
     margin: 0;
     color: var(--primary-white);
@@ -156,8 +170,7 @@ body.loading-active .custom-scrollbar {
     font-family: "Open Sans", sans-serif;
     font-weight: 400;
     font-size: clamp(1.25rem, 3.15vw, 2.5rem);
-    letter-spacing: 0.04rem;
-    margin: 0.6em 0 0 0;
+    margin: 1rem 0 0 0;
     color: var(--secondary-white);
     cursor: default;
 }
@@ -166,7 +179,80 @@ body.loading-active .custom-scrollbar {
 
 /* region Layout */
 
-.hero {
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#header {
+    position: fixed;
+    padding: 1.25rem 0;
+    z-index: 3;
+    width: 100vw;
+}
+
+#header.header-auto-hide {
+    transition: visibility 0.5s ease, opacity 0.5s ease;
+}
+
+#header.header-auto-hide.header-hidden {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.header-container {
+    margin: 0 5rem;
+    justify-content: space-between;
+}
+
+.header-logo {
+    height: 6.25rem;
+}
+
+.header-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.header-nav-link {
+    color: var(--primary-white);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.header-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: 0.32rem;
+    transition: all 0.3s ease;
+}
+
+.active-nav-icon {
+    height: 0.75rem;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.3s ease, opacity 0.3s ease;
+}
+
+.header-nav-item:hover .active-nav-icon {
+    visibility: visible;
+    opacity: 1;
+}
+
+.header-nav-item .active-nav-icon.active-icon {
+    visibility: visible;
+    opacity: 1;
+}
+
+.header-nav-link:hover,
+.active-nav {
+    opacity: 1;
+}
+
+#hero {
     position: relative;
     display: flex;
     flex-direction: column;
