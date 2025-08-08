@@ -66,12 +66,19 @@ export default class Sketch {
         // this.fpsElapsed = 0;
 
         // Mouse movement event to update shader uniform
-        const heroContainer = this.container.parentElement;
-        heroContainer.addEventListener("mousemove", (e) => {
+        document.addEventListener("mousemove", (e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
             const y = 1.0 - (e.clientY - rect.top) / rect.height;
-            this.material.uniforms.mouse.value.set(x, y);
+            // Only update if mouse is within the sketch container bounds
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                this.material.uniforms.mouse.value.set(x, y);
+            }
         });
     }
 
