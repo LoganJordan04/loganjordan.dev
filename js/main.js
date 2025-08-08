@@ -536,6 +536,156 @@ class LoadingManager {
     }
 }
 
+class NavManager {
+    constructor() {
+        this.sections = ['hero', 'about', 'work', 'experience', 'footer'];
+        this.navLinks = {};
+        this.navItems = {};
+        this.currentActiveSection = 'hero'; // Default to hero
+        this.observerTimeout = null; // For managing observer during smooth scroll
+
+        this.init();
+    }
+
+    init() {
+        // Cache nav elements
+        this.sections.forEach(sectionId => {
+            const navLink = document.querySelector(`a[href="#${sectionId}"]`);
+            const navItem = navLink?.closest('.header-nav-item');
+
+            if (navLink && navItem) {
+                this.navLinks[sectionId] = navLink;
+                this.navItems[sectionId] = navItem;
+            }
+        });
+
+        // Set initial active state
+        this.setActiveNav('hero');
+
+        // Setup intersection observer
+        this.setupIntersectionObserver();
+
+        // Setup smooth scrolling
+        this.setupSmoothScrolling();
+    }
+
+    setupIntersectionObserver() {
+        const options = {
+            root: null,
+            rootMargin: '-20% 0px -60% 0px', // Trigger when section is 20% from top
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            // Find the section that's most visible
+            let mostVisibleSection = null;
+            let maxRatio = 0;
+
+            entries.forEach(entry => {
+                if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+                    maxRatio = entry.intersectionRatio;
+                    mostVisibleSection = entry.target.id;
+                }
+            });
+
+            // Special handling for hero section when at top of page
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop < 100) {
+                mostVisibleSection = 'hero';
+            }
+
+            if (mostVisibleSection && mostVisibleSection !== this.currentActiveSection) {
+                this.setActiveNav(mostVisibleSection);
+            }
+        }, options);
+
+        // Observe all sections
+        this.sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                observer.observe(section);
+            }
+        });
+    }
+
+    setActiveNav(activeSection) {
+        // Remove active class from all nav links and icons
+        Object.values(this.navLinks).forEach(link => {
+            link.classList.remove('active-nav');
+        });
+
+        // Hide all active nav icons by removing active class
+        Object.values(this.navItems).forEach(item => {
+            const icon = item.querySelector('.active-nav-icon');
+            if (icon) {
+                icon.classList.remove('active-icon');
+            }
+        });
+
+        // Set active state for current section
+        if (this.navLinks[activeSection] && this.navItems[activeSection]) {
+            this.navLinks[activeSection].classList.add('active-nav');
+
+            const activeIcon = this.navItems[activeSection].querySelector('.active-nav-icon');
+            if (activeIcon) {
+                activeIcon.classList.add('active-icon');
+            }
+        }
+
+        this.currentActiveSection = activeSection;
+    }
+
+    setupSmoothScrolling() {
+        // Add click listeners to all nav links
+        Object.entries(this.navLinks).forEach(([sectionId, navLink]) => {
+            navLink.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                this.scrollToSection(sectionId);
+            });
+        });
+    }
+
+    scrollToSection(sectionId) {
+        const targetSection = document.getElementById(sectionId);
+        if (!targetSection) return;
+
+        // Calculate offset for better positioning
+        let offset = 0;
+
+        // Special offset for hero section (scroll to very top)
+        if (sectionId === 'hero') {
+            offset = 0;
+        } else {
+            // For other sections, account for header height
+            const header = document.getElementById('header');
+            offset = header ? header.offsetHeight : 80;
+        }
+
+        // Get target position
+        const targetPosition = targetSection.offsetTop - offset;
+
+        // Smooth scroll to target
+        window.scrollTo({
+            top: Math.max(0, targetPosition),
+            behavior: 'smooth'
+        });
+
+        // Temporarily disable intersection observer to prevent conflicts
+        this.temporarilyDisableObserver();
+
+        // Set active state immediately for better UX
+        this.setActiveNav(sectionId);
+    }
+
+    temporarilyDisableObserver() {
+        // Re-enable observer after scroll animation completes
+        clearTimeout(this.observerTimeout);
+        this.observerTimeout = setTimeout(() => {
+            // Observer will resume automatically
+        }, 1000); // Give time for smooth scroll to complete
+    }
+}
+
 // Initialize when DOM is ready
 function initializeApp() {
     // Force scroll to top
@@ -551,6 +701,7 @@ function initializeApp() {
     }
 
     new CustomScrollbar();
+    new NavManager();
 
     // Drag functionality
     // (function() {
