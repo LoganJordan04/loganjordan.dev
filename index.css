@@ -330,19 +330,19 @@ a {
     cursor: grabbing;
 }
 
-.glass-card {
-    transition: opacity 0.26s ease-out;
-    --fx-filter: blur(2px) contrast(1.2) liquid-glass(2, 10, 0.5) drop-shadow(-8px -10px 46px #0000005f);
-}
+/*.glass-card {*/
+/*    transition: opacity 0.26s ease-out;*/
+/*    --fx-filter: blur(2px) contrast(1.2) liquid-glass(2, 10, 0.5) drop-shadow(-8px -10px 46px #0000005f);*/
+/*}*/
 
-.glass-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    border-radius: 16px;
-    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2);
-}
+/*.glass-card::before {*/
+/*    content: "";*/
+/*    position: absolute;*/
+/*    inset: 0;*/
+/*    z-index: 0;*/
+/*    overflow: hidden;*/
+/*    border-radius: 16px;*/
+/*    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2);*/
+/*}*/
 
 /* endregion */
