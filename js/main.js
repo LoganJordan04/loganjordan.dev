@@ -9,7 +9,11 @@ import { GrainShader } from "./shaders/GrainShader.js";
 import { DotLottie } from "@lottiefiles/dotlottie-web";
 
 // Define color palettes
-const colors = [["#24479e", "#ebe0ca", "#eb580e"]];
+const colors = [
+    ["#2d55bd", "#f6ead2", "#f55809"],
+    // ["#9359c7", "#b2ecc0", "#5069e3"],
+    // ["#226798", "#43bd8f", "#dcfadf"],
+];
 // Select a random palette and convert to THREE.Color
 const palette = colors[Math.floor(Math.random() * colors.length)].map(
     (color) => new THREE.Color(color)
