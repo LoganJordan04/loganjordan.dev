@@ -190,6 +190,7 @@ a {
     padding: 1.25rem 0;
     z-index: 3;
     width: 100vw;
+    isolation: isolate;
 }
 
 #header.header-auto-hide {
@@ -198,6 +199,11 @@ a {
 
 #header.header-auto-hide.header-hidden {
     opacity: 0;
+}
+
+#header.blend-mode {
+    mix-blend-mode: difference;
+    transition: mix-blend-mode 0.3s ease;
 }
 
 .header-container {
@@ -219,7 +225,7 @@ a {
 .header-nav-link {
     color: var(--primary-white);
     opacity: 0.7;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, mix-blend-mode 0.3s ease;
 }
 
 .header-nav-item {

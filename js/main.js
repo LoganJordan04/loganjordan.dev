@@ -946,6 +946,170 @@ class HeaderManager {
     }
 }
 
+// Header color switching when over white text
+class HeaderColorManager {
+    constructor() {
+        this.header = document.getElementById('header');
+        this.headerRect = null;
+        this.isBlendMode = false;
+        this.ticking = false;
+
+        if (!this.header) return;
+
+        this.init();
+    }
+
+    init() {
+        // Check color on scroll and resize
+        window.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+        window.addEventListener('resize', this.handleResize.bind(this), { passive: true });
+
+        // Initial check
+        this.checkHeaderColor();
+    }
+
+    handleScroll() {
+        if (!this.ticking) {
+            requestAnimationFrame(() => {
+                this.checkHeaderColor();
+                this.ticking = false;
+            });
+            this.ticking = true;
+        }
+    }
+
+    handleResize() {
+        this.headerRect = null; // Reset cached rect
+        this.checkHeaderColor();
+    }
+
+    checkHeaderColor() {
+        // Only apply blend mode on screens smaller than 1024px
+        if (window.innerWidth >= 1024) {
+            if (this.isBlendMode) {
+                this.isBlendMode = false;
+                this.updateHeaderBlendMode();
+            }
+            return;
+        }
+
+        // Get header bounds
+        if (!this.headerRect) {
+            this.headerRect = this.header.getBoundingClientRect();
+        }
+
+        // Check if header overlaps with white text elements
+        const shouldUseBlendMode = this.isOverWhiteText();
+
+        if (shouldUseBlendMode !== this.isBlendMode) {
+            this.isBlendMode = shouldUseBlendMode;
+            this.updateHeaderBlendMode();
+        }
+    }
+
+    isOverWhiteText() {
+        // Get all elements that might have white text
+        const whiteTextSelectors = [
+            '.hero-title',
+            '.hero-subtitle',
+            'h1, h2, h3, h4, h5, h6',
+            'p',
+            '.text-white',
+            '[style*="color: white"]',
+            '[style*="color: #fff"]',
+            '[style*="color: #ffffff"]'
+        ];
+
+        const headerRect = this.header.getBoundingClientRect();
+
+        for (const selector of whiteTextSelectors) {
+            const elements = document.querySelectorAll(selector);
+
+            for (const element of elements) {
+                const elementRect = element.getBoundingClientRect();
+
+                // Check if element is visible and has white-ish text
+                if (this.isElementVisible(element, elementRect) &&
+                    this.hasWhiteText(element) &&
+                    this.rectsOverlap(headerRect, elementRect)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    isElementVisible(element, rect) {
+        // Check if element is in viewport and visible
+        return rect.bottom > 0 &&
+            rect.top < window.innerHeight &&
+            rect.right > 0 &&
+            rect.left < window.innerWidth &&
+            window.getComputedStyle(element).opacity !== '0' &&
+            window.getComputedStyle(element).visibility !== 'hidden';
+    }
+
+    hasWhiteText(element) {
+        const styles = window.getComputedStyle(element);
+        const color = styles.color;
+
+        // Convert color to RGB values for comparison
+        const rgb = this.colorToRgb(color);
+        if (!rgb) return false;
+
+        // Check if color is white-ish (high brightness)
+        const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+        return brightness > 200; // Threshold for "white" text
+    }
+
+    colorToRgb(color) {
+        // Handle different color formats
+        if (color.startsWith('rgb')) {
+            const values = color.match(/\d+/g);
+            return values ? {
+                r: parseInt(values[0]),
+                g: parseInt(values[1]),
+                b: parseInt(values[2])
+            } : null;
+        }
+
+        // Handle hex colors (if any)
+        if (color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            return {
+                r: parseInt(hex.substr(0, 2), 16),
+                g: parseInt(hex.substr(2, 2), 16),
+                b: parseInt(hex.substr(4, 2), 16)
+            };
+        }
+
+        // Handle named colors (basic cases)
+        const colorMap = {
+            'white': { r: 255, g: 255, b: 255 },
+            'rgb(250, 250, 250)': { r: 250, g: 250, b: 250 }, // var(--primary-white)
+            'rgb(245, 245, 245)': { r: 245, g: 245, b: 245 }  // var(--secondary-white)
+        };
+
+        return colorMap[color] || null;
+    }
+
+    rectsOverlap(rect1, rect2) {
+        return !(rect1.right < rect2.left ||
+            rect1.left > rect2.right ||
+            rect1.bottom < rect2.top ||
+            rect1.top > rect2.bottom);
+    }
+
+    updateHeaderBlendMode() {
+        if (this.isBlendMode) {
+            this.header.classList.add('blend-mode');
+        } else {
+            this.header.classList.remove('blend-mode');
+        }
+    }
+}
+
 // Initialize when DOM is ready
 function initializeApp() {
     // Force scroll to top
@@ -963,6 +1127,7 @@ function initializeApp() {
     new CustomScrollbar();
     new NavManager();
     new HeaderManager();
+    new HeaderColorManager();
 
     // Drag functionality
     // (function() {
