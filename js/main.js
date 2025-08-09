@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { GrainShader } from "./shaders/GrainShader.js";
+import { DotLottie } from '@lottiefiles/dotlottie-web';
 
 // Define color palettes
 const colors = [["#24479e", "#ebe0ca", "#eb580e"]];
@@ -536,13 +537,15 @@ class LoadingManager {
     }
 }
 
+// Navigation management
 class NavManager {
     constructor() {
         this.sections = ['hero', 'about', 'work', 'experience', 'footer'];
         this.navLinks = {};
         this.navItems = {};
-        this.currentActiveSection = 'hero'; // Default to hero
-        this.observerTimeout = null; // For managing observer during smooth scroll
+        this.lottieInstances = {}; // Store Lottie instances for each nav item
+        this.currentActiveSection = 'hero';
+        this.observerTimeout = null;
 
         this.init();
     }
@@ -559,6 +562,11 @@ class NavManager {
             }
         });
 
+        // Initialize Lottie animations
+        setTimeout(() => {
+            this.initializeLottieAnimations();
+        }, 100);
+
         // Set initial active state
         this.setActiveNav('hero');
 
@@ -569,15 +577,51 @@ class NavManager {
         this.setupSmoothScrolling();
     }
 
+    initializeLottieAnimations() {
+        // Initialize Lottie for each nav item (excluding hero)
+        this.sections.forEach(sectionId => {
+            if (sectionId === 'hero') return; // Hero doesn't have a nav arrow
+
+            const navItem = this.navItems[sectionId];
+            if (navItem) {
+                const canvas = navItem.querySelector('.nav-arrow-canvas');
+                if (canvas) {
+                    try {
+                        const lottieInstance = new DotLottie({
+                            autoplay: false,
+                            loop: false,
+                            canvas: canvas,
+                            src: "animations/arrow-in.json",
+                        });
+
+                        lottieInstance.addEventListener('load', () => {
+                            console.log(`Lottie animation loaded for ${sectionId}`);
+                            // Set to last frame (inactive state)
+                            lottieInstance.setFrame(lottieInstance.totalFrames - 1);
+                        });
+
+                        lottieInstance.addEventListener('error', (error) => {
+                            console.error(`Failed to load Lottie animation for ${sectionId}:`, error);
+                        });
+
+                        this.lottieInstances[sectionId] = lottieInstance;
+
+                    } catch (error) {
+                        console.error(`Error initializing Lottie animation for ${sectionId}:`, error);
+                    }
+                }
+            }
+        });
+    }
+
     setupIntersectionObserver() {
         const options = {
             root: null,
-            rootMargin: '-20% 0px -60% 0px', // Trigger when section is 20% from top
+            rootMargin: '-20% 0px -60% 0px',
             threshold: 0
         };
 
         const observer = new IntersectionObserver((entries) => {
-            // Find the section that's most visible
             let mostVisibleSection = null;
             let maxRatio = 0;
 
@@ -588,7 +632,6 @@ class NavManager {
                 }
             });
 
-            // Special handling for hero section when at top of page
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             if (scrollTop < 100) {
                 mostVisibleSection = 'hero';
@@ -599,7 +642,6 @@ class NavManager {
             }
         }, options);
 
-        // Observe all sections
         this.sections.forEach(sectionId => {
             const section = document.getElementById(sectionId);
             if (section) {
@@ -609,83 +651,140 @@ class NavManager {
     }
 
     setActiveNav(activeSection) {
-        // Remove active class from all nav links and icons
-        Object.values(this.navLinks).forEach(link => {
-            link.classList.remove('active-nav');
-        });
+        const previousActiveSection = this.currentActiveSection;
 
-        // Hide all active nav icons by removing active class
-        Object.values(this.navItems).forEach(item => {
-            const icon = item.querySelector('.active-nav-icon');
-            if (icon) {
-                icon.classList.remove('active-icon');
+        // Remove active classes from all nav items
+        Object.entries(this.navItems).forEach(([sectionId, navItem]) => {
+            const navLink = this.navLinks[sectionId];
+            const canvas = navItem.querySelector('.nav-arrow-canvas');
+
+            if (navLink) {
+                navLink.classList.remove('active-nav');
+                navItem.classList.remove('active-nav-item');
+            }
+
+            if (canvas) {
+                canvas.classList.remove('active-icon');
+            }
+
+            // Play reverse animation for previously active item
+            if (sectionId === previousActiveSection && sectionId !== 'hero' && this.lottieInstances[sectionId]) {
+                this.playLottieReverse(sectionId);
             }
         });
 
         // Set active state for current section
-        if (this.navLinks[activeSection] && this.navItems[activeSection]) {
-            this.navLinks[activeSection].classList.add('active-nav');
+        if (activeSection !== 'hero') {
+            const activeNavLink = this.navLinks[activeSection];
+            const activeNavItem = this.navItems[activeSection];
 
-            const activeIcon = this.navItems[activeSection].querySelector('.active-nav-icon');
-            if (activeIcon) {
-                activeIcon.classList.add('active-icon');
+            if (activeNavLink && activeNavItem) {
+                activeNavLink.classList.add('active-nav');
+                activeNavItem.classList.add('active-nav-item');
+
+                const activeCanvas = activeNavItem.querySelector('.nav-arrow-canvas');
+                if (activeCanvas) {
+                    activeCanvas.classList.add('active-icon');
+                }
+
+                // Play forward animation for newly active item
+                if (this.lottieInstances[activeSection]) {
+                    this.playLottieForward(activeSection);
+                }
             }
         }
 
         this.currentActiveSection = activeSection;
     }
 
+    playLottieForward(sectionId) {
+        const lottie = this.lottieInstances[sectionId];
+        if (lottie && lottie.isLoaded) {
+            lottie.setMode("forward");
+            lottie.setFrame(0);
+            lottie.play();
+        }
+    }
+
+    playLottieReverse(sectionId) {
+        const lottie = this.lottieInstances[sectionId];
+        if (lottie && lottie.isLoaded) {
+            lottie.setMode("reverse")
+            lottie.setFrame(lottie.totalFrames);
+            lottie.play();
+        }
+    }
+
     setupSmoothScrolling() {
         // Add click listeners to all nav links
         Object.entries(this.navLinks).forEach(([sectionId, navLink]) => {
             navLink.addEventListener('click', (e) => {
-                e.preventDefault(); // Prevent default anchor behavior
+                e.preventDefault();
                 this.scrollToSection(sectionId);
             });
         });
+
+        // Add hover effects
+        Object.entries(this.navItems).forEach(([sectionId, navItem]) => {
+            if (sectionId === 'hero') return;
+
+            navItem.addEventListener('mouseenter', () => {
+                this.handleNavHover(sectionId, true);
+            });
+
+            navItem.addEventListener('mouseleave', () => {
+                this.handleNavHover(sectionId, false);
+            });
+        });
+    }
+
+    handleNavHover(sectionId, isEntering) {
+        // Don't show hover effect if this is the currently active section
+        if (sectionId === this.currentActiveSection) return;
+
+        const lottie = this.lottieInstances[sectionId];
+        if (!lottie || !lottie.isLoaded) return;
+
+        if (isEntering) {
+            this.playLottieForward(sectionId)
+        } else {
+            this.playLottieReverse(sectionId)
+        }
     }
 
     scrollToSection(sectionId) {
         const targetSection = document.getElementById(sectionId);
         if (!targetSection) return;
 
-        // Calculate offset for better positioning
         let offset;
 
-        // Special offset for hero section (scroll to very top)
         if (sectionId === 'hero') {
             offset = 0;
         } else {
-            // For other sections, account for header height
             const header = document.getElementById('header');
             offset = header ? header.offsetHeight : 80;
         }
 
-        // Get target position
         const targetPosition = targetSection.offsetTop - offset;
 
-        // Smooth scroll to target
         window.scrollTo({
             top: Math.max(0, targetPosition),
             behavior: 'smooth'
         });
 
-        // Temporarily disable intersection observer to prevent conflicts
         this.temporarilyDisableObserver();
-
-        // Set active state immediately for better UX
         this.setActiveNav(sectionId);
     }
 
     temporarilyDisableObserver() {
-        // Re-enable observer after scroll animation completes
         clearTimeout(this.observerTimeout);
         this.observerTimeout = setTimeout(() => {
             // Observer will resume automatically
-        }, 1000); // Give time for smooth scroll to complete
+        }, 1000);
     }
 }
 
+// Header management
 class HeaderManager {
     constructor() {
         this.header = document.getElementById('header');
@@ -695,6 +794,7 @@ class HeaderManager {
         this.isHovering = false;
         this.scrollDirection = 'up';
         this.ticking = false;
+        this.navClickHide = false; // Track if header was hidden by nav click
 
         this.init();
     }
@@ -705,12 +805,63 @@ class HeaderManager {
         // Add CSS class for transitions
         this.header.classList.add('header-auto-hide');
 
+        // Add hover listeners to the header
+        this.header.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
+        this.header.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+
         // Setup scroll listener
         window.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
 
-        // Setup hover listeners
+        // Setup hover listeners for the header and hover zone
         this.header.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
         this.header.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+
+        // Setup nav click listeners
+        this.setupNavClickListeners();
+    }
+
+    setupNavClickListeners() {
+        // Find all nav links and add click listeners
+        const navLinks = this.header.querySelectorAll('.header-nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                // Hide header when any nav item is clicked
+                this.navClickHide = true;
+                this.hideHeader();
+                
+                // Update when page is scrolling
+                this.handleScroll()
+
+                // Reset the flag after a delay to allow normal scroll behavior to resume
+                setTimeout(() => {
+                    this.navClickHide = false;
+                }, 1500);
+            });
+        });
+
+        // Also add click listener to the logo
+        const logoLink = this.header.querySelector('a[href="#hero"]');
+        if (logoLink) {
+            logoLink.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                // Hide header when logo is clicked
+                this.navClickHide = true;
+                this.hideHeader();
+
+                // Trigger smooth scroll to hero section
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                this.handleScroll()
+
+                // Reset the flag after a delay
+                setTimeout(() => {
+                    this.navClickHide = false;
+                }, 1500);
+            });
+        }
     }
 
     handleScroll() {
@@ -730,15 +881,23 @@ class HeaderManager {
             this.scrollDirection = 'up';
         }
 
+        // Don't update header state if it was hidden by nav click and we're hovering
+        if (this.navClickHide && this.isHovering) {
+            this.lastScrollY = currentScrollY;
+            this.ticking = false;
+            return;
+        }
+
         // Show/hide header based on scroll direction and position
         if (currentScrollY <= this.scrollThreshold) {
             // Always show header at the top
             this.showHeader();
+            this.navClickHide = false; // Reset nav click hide when at top
         } else if (this.scrollDirection === 'down' && !this.isHovering) {
             // Hide header when scrolling down (unless hovering)
             this.hideHeader();
-        } else if (this.scrollDirection === 'up') {
-            // Show header when scrolling up
+        } else if (this.scrollDirection === 'up' && !this.navClickHide) {
+            // Show header when scrolling up (unless hidden by nav click)
             this.showHeader();
         }
 
@@ -748,15 +907,27 @@ class HeaderManager {
 
     handleMouseEnter() {
         this.isHovering = true;
+        // Always show header when hovering, regardless of nav click state
         this.showHeader();
     }
 
-    handleMouseLeave() {
-        this.isHovering = false;
+    handleMouseLeave(e) {
+        // Check if we're leaving both the header and hover zone
+        const leavingHeader = !this.header.contains(e.relatedTarget);
 
-        // If we're past the threshold and scrolling down, hide the header
-        if (window.pageYOffset > this.scrollThreshold && this.scrollDirection === 'down') {
-            this.hideHeader();
+        if (leavingHeader && e.relatedTarget !== this.header) {
+            this.isHovering = false;
+
+            // If header was hidden by nav click, hide it again
+            if (this.navClickHide) {
+                this.hideHeader();
+                return;
+            }
+
+            // If we're past the threshold and scrolling down, hide the header
+            if (window.pageYOffset > this.scrollThreshold && this.scrollDirection === 'down') {
+                this.hideHeader();
+            }
         }
     }
 
