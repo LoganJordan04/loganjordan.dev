@@ -120,6 +120,7 @@ void main() {
 
     // Generate Perlin noise value
     float n = cnoise(noiseInput);
+    // float n = cnoise(noiseInput) + 1231231.; // Easter egg 1
 
     // Rotate and scale the base UVs for pattern distortion
     vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;

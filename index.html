@@ -51,26 +51,63 @@
                 id="loading-animation"
             >
                 <source
-                    src="images/signature-animation.webm"
+                    src="animations/signature-animation.webm"
                     type="video/webm"
                 />
             </video>
         </div>
 
+        <header role="banner">
+            <div id="header">
+                <div class="header-container center">
+                    <a href="#hero" aria-label="Go To Top">
+                        <img class="header-logo" src="icons/signature-light.svg" alt="LJ Signature"/>
+                    </a>
+                    <nav class="header-nav" aria-label="Main Navigation">
+                        <ul class="header-nav-list">
+                            <li class="header-nav-item" data-section="about">
+                                <canvas class="nav-arrow-canvas" width="30" height="10" aria-hidden="true"></canvas>
+                                <a class="header-nav-link" href="#about" aria-current="page">About</a>
+                            </li>
+                            <li class="header-nav-item" data-section="work">
+                                <canvas class="nav-arrow-canvas" width="30" height="10" aria-hidden="true"></canvas>
+                                <a class="header-nav-link" href="#work">Work</a>
+                            </li>
+                            <li class="header-nav-item" data-section="experience">
+                                <canvas class="nav-arrow-canvas" width="30" height="10" aria-hidden="true"></canvas>
+                                <a class="header-nav-link" href="#experience">Experience</a>
+                            </li>
+                            <li class="header-nav-item" data-section="footer">
+                                <canvas class="nav-arrow-canvas" width="30" height="10" aria-hidden="true"></canvas>
+                                <a class="header-nav-link" href="#footer">Contact</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </header>
+        
         <main id="main-content" role="main">
-            <section class="hero">
+            <section id="hero">
                 <div id="three-container"></div>
+                <!--<div id="draggable-card" class="glass-card">Drag Me!</div>-->
                 <div class="hero-text-container">
                     <h1 class="hero-title">Logan Jordan</h1>
                     <h2 class="hero-subtitle">
-                        Designer & Front End Developer
+                        Designer & Frontend Developer
                     </h2>
                 </div>
             </section>
 
-            <section class="section-container"></section>
+            <section id="about" class="section-container"></section>
+            <section id="work" class="section-container"></section>
+            <section id="experience" class="section-container"></section>
+            <section id="footer" class="section-container"></section>
         </main>
 
         <script type="module" src="/js/main.js"></script>
+
+        <!--https://github.com/berkaytumal/FxFilterJS -->
+        <!--<script src="https://berkaytumal.github.io/FxFilterJS/FxFilter.js"></script>-->
     </body>
 </html>
