@@ -595,7 +595,8 @@ class NavManager {
                             autoplay: false,
                             loop: false,
                             canvas: canvas,
-                            src: "animations/arrow-in.json",
+                            // src: "animations/arrow-in.json",
+                            src: "https://lottie.host/aa7309d5-cc2c-40ea-9519-37b273a48cc7/qWR4WpIIWr.lottie",
                         });
 
                         lottieInstance.addEventListener("load", () => {
@@ -1186,7 +1187,8 @@ class SkipLinkManager {
                 loop: false,
                 speed: 0.75,
                 canvas: this.canvas,
-                src: "animations/scroll-down.json",
+                // src: "animations/scroll-down.json",
+                src: "https://lottie.host/39905ce4-1156-4e75-af94-1daf6320cde3/z9UzMOacTZ.lottie",
             });
 
             this.lottieInstance.addEventListener("load", () => {
