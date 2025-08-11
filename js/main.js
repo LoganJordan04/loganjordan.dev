@@ -11,10 +11,27 @@ function initializeApp() {
 
     new LoadingManager();
 
+    // Initialize Hero Three.js container
     const heroThreeContainer = document.getElementById("hero-three-container");
     if (heroThreeContainer) {
         new Sketch({
             dom: heroThreeContainer,
+            section: "hero",
+            geometryWidth: 4,
+            geometryHeight: 2,
+        });
+    }
+
+    // Initialize About Three.js container
+    const aboutThreeContainer = document.getElementById(
+        "about-three-container"
+    );
+    if (aboutThreeContainer) {
+        new Sketch({
+            dom: aboutThreeContainer,
+            section: "about",
+            geometryWidth: 8,
+            geometryHeight: 2,
         });
     }
 
