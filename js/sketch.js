@@ -1,6 +1,7 @@
 import * as THREE from "three";
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import fragment from "./shaders/fragment.glsl";
+import aboutfragment from "./shaders/aboutfragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -13,16 +14,22 @@ const colors = [
     // ["#9359c7", "#b2ecc0", "#5069e3"],
     // ["#226798", "#43bd8f", "#dcfadf"],
 ];
-// Select a random palette and convert to THREE.Color
-const palette = colors[Math.floor(Math.random() * colors.length)].map(
-    (color) => new THREE.Color(color)
-);
+
+// Fragment shader mapping
+const fragmentShaders = {
+    hero: fragment,
+    about: aboutfragment,
+    // Add more sections as needed
+};
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export class Sketch {
     /**
      * @param {Object} options - Configuration options
      * @param {HTMLElement} options.dom - The container DOM element for rendering
+     * @param {string} options.section - The section name to determine which fragment shader to use
+     * @param {number} options.geometryWidth - The width of the plane geometry
+     * @param {number} options.geometryHeight - The height of the plane geometry
      */
     constructor(options) {
         // Create the scene
@@ -30,6 +37,9 @@ export class Sketch {
 
         // Set up renderer and append to container
         this.container = options.dom;
+        this.section = options.section;
+        this.geometryWidth = options.geometryWidth;
+        this.geometryHeight = options.geometryHeight;
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
         this.renderer = new THREE.WebGLRenderer();
@@ -57,6 +67,11 @@ export class Sketch {
         this.time = 0;
 
         this.isPlaying = true; // Animation state
+
+        // Select a random palette and convert to THREE.Color
+        this.palette = colors[Math.floor(Math.random() * colors.length)].map(
+            (color) => new THREE.Color(color)
+        );
 
         // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
@@ -114,6 +129,9 @@ export class Sketch {
 
     // Add objects (geometry and material) to the scene.
     addObjects() {
+        // Get the appropriate fragment shader for this section
+        const selectedFragment = fragmentShaders[this.section] || fragment;
+
         // Create custom shader material
         this.material = new THREE.ShaderMaterial({
             extensions: {
@@ -123,29 +141,23 @@ export class Sketch {
             uniforms: {
                 time: { value: 0 },
                 resolution: { value: new THREE.Vector4() },
-                uColor: { value: palette },
+                uColor: { value: this.palette },
                 mouse: { value: new THREE.Vector2(0, 0) },
             },
             vertexShader: vertex,
-            fragmentShader: fragment,
+            fragmentShader: selectedFragment,
         });
 
         // Create a plane geometry and mesh
-        this.geometry = new THREE.PlaneGeometry(4, 2, 1, 1);
+        this.geometry = new THREE.PlaneGeometry(
+            this.geometryWidth,
+            this.geometryHeight,
+            1,
+            1
+        );
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
-
-    // stop() {
-    //     this.isPlaying = false;
-    // }
-    //
-    // play() {
-    //     if(!this.isPlaying){
-    //         this.isPlaying = true;
-    //         this.render()
-    //     }
-    // }
 
     // Main render loop. Updates uniforms, handles FPS, and renders the scene.
     render() {
