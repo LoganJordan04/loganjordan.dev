@@ -2,7 +2,7 @@ import { Sketch } from "./sketch.js";
 import { LoadingManager } from "./loading.js";
 import { CustomScrollbar } from "./scrollbar.js";
 import { NavManager, HeaderManager, HeaderColorManager } from "./header.js";
-import { SkipLinkManager } from "./animations.js";
+import { SkipLinkManager, ScrollWords } from "./animations.js";
 
 // Initialize when DOM is ready
 function initializeApp() {
@@ -23,6 +23,7 @@ function initializeApp() {
     new HeaderManager();
     new HeaderColorManager();
     new SkipLinkManager();
+    new ScrollWords();
 
     // Drag functionality
     // (function() {
