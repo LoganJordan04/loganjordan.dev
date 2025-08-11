@@ -11,10 +11,10 @@ function initializeApp() {
 
     new LoadingManager();
 
-    const threeContainer = document.getElementById("three-container");
-    if (threeContainer) {
+    const heroThreeContainer = document.getElementById("hero-three-container");
+    if (heroThreeContainer) {
         new Sketch({
-            dom: threeContainer,
+            dom: heroThreeContainer,
         });
     }
 
