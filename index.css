@@ -75,11 +75,16 @@ a {
     justify-content: center;
 }
 
-.section-container {
+.section-container,
+.temp-section-container {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--spacing-xxl) 0;
+}
+
+.temp-section-container {
+    height: 1000px;
 }
 
 /* endregion */
@@ -373,6 +378,16 @@ body.loading-active .custom-scrollbar {
     padding-top: 11.25em;
 }
 
+#about-three-container {
+    /* TODO: Fix positioning */
+    position: absolute;
+    top: 120vh;
+    left: 0;
+    width: 100%;
+    height: 800px;
+    z-index: 0;
+}
+
 .words-container {
     overflow: hidden;
     position: relative;
@@ -380,6 +395,7 @@ body.loading-active .custom-scrollbar {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    z-index: 1;
 }
 
 .about-words {
