@@ -221,7 +221,7 @@ export class ScrollWords {
         });
 
         // Different speeds for visual interest
-        const speeds = [30, 35, 25, 40]; // pixels per second
+        const speeds = [30, 35, 25, 40, 20]; // pixels per second
         const speed = speeds[index] || 30;
         const duration = totalDistance / speed;
 
