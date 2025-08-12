@@ -116,14 +116,14 @@ void main() {
     float ripple = exp(-dist * 1.) * 1.;
 
     // Modulate noise input with ripple and time for animation
-    vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.03);
+    vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.07);
 
     // Generate Perlin noise value
     float n = cnoise(noiseInput);
-    // float n = cnoise(noiseInput) + 1231231.; // Easter egg 1
+    // float n = cnoise(noiseInput) + 1231232.; // Easter egg 1
 
-    // Straight line
-    vec2 baseUV = rotate2D(n) * vPosition.xy * 0.2;
+    // Straight line with pattern distortion
+    vec2 baseUV = rotate2D(n * 0.3) * vPosition.xy * 0.2;
 
     // Generate two line patterns with different offsets
     float basePattern = line(baseUV, 0.5);
