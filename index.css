@@ -384,8 +384,36 @@ body.loading-active .custom-scrollbar {
     top: 120vh;
     left: 0;
     width: 100%;
-    height: 800px;
+    height: 100vh;
     z-index: 0;
+}
+
+#about-three-container::before,
+#about-three-container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    z-index: 2;
+}
+
+#about-three-container::before {
+    top: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
+}
+
+#about-three-container::after {
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
 }
 
 .words-container {
