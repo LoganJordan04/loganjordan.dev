@@ -357,10 +357,23 @@ body.loading-active .custom-scrollbar {
     margin: 0;
     z-index: 2;
     display: flex;
+    flex-direction: column;
     align-items: center;
     color: var(--secondary-white);
     text-decoration: none;
     cursor: default;
+}
+
+.skip-text {
+    margin: 0;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#skip-link:focus .skip-text {
+    visibility: visible;
+    opacity: 1;
 }
 
 .hero-arrow-canvas {
