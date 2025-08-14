@@ -12,6 +12,9 @@ export class LoadingManager {
     }
 
     init() {
+        // Make content unfocusable underneath loading screen
+        this.setInertState(true);
+        
         this.playVideo();
 
         // Set timer to remove loading screen
@@ -21,6 +24,21 @@ export class LoadingManager {
 
         // Dev: Click to skip loading screen
         this.setupSkipFeature();
+    }
+
+    setInertState(isLoading) {
+        const smoothWrapper = document.getElementById("smooth-wrapper");
+        const header = document.querySelector("header");
+
+        if (isLoading) {
+            // Make content inert during loading
+            if (smoothWrapper) smoothWrapper.setAttribute("inert", "");
+            if (header) header.setAttribute("inert", "");
+        } else {
+            // Remove inert when loading is complete
+            if (smoothWrapper) smoothWrapper.removeAttribute("inert");
+            if (header) header.removeAttribute("inert");
+        }
     }
 
     setupSkipFeature() {
@@ -106,6 +124,8 @@ export class LoadingManager {
     }
 
     removeLoadingScreen(skipFading = false) {
+        this.setInertState(false);
+        
         if (this.isComplete) {
             return;
         }
