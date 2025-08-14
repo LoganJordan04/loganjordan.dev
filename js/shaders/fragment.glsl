@@ -107,7 +107,7 @@ vec3 threeColorGradient(vec3 color1, vec3 color2, vec3 color3, float t) {
 }
 
 void main() {
-    vec3 black = vec3(2./255., 2./255., 2./255.);
+    vec3 black = vec3(1./255., 1./255., 1./255.);
 
     // Calculate distance from mouse to current UV coordinate
     float dist = distance(vUv, mouse);
