@@ -158,7 +158,7 @@ export class ScrollWords {
         this.scrollTriggers = [];
         this.splitTexts = [];
         this.isConverging = false;
-
+        
         // Clean up existing clones and wrappers
         const existingWrappers = document.querySelectorAll('.words-line-wrapper');
         existingWrappers.forEach(wrapper => {
@@ -171,9 +171,14 @@ export class ScrollWords {
             }
         });
 
-        // Reinitialize
-        this.setupScrolling();
-        this.setupConvergeAnimation();
+        // Refresh ScrollTrigger to recalculate positions
+        ScrollTrigger.refresh();
+
+        // Small delay to ensure DOM is updated before reinitializing
+        setTimeout(() => {
+            this.setupScrolling();
+            this.setupConvergeAnimation();
+        }, 50);
     }
 
     setupResize() {
@@ -181,6 +186,13 @@ export class ScrollWords {
             // Debounce resize events
             clearTimeout(this.resizeTimeout);
             this.resizeTimeout = setTimeout(() => {
+                // Kill existing scroll triggers immediately on resize start
+                this.scrollTriggers.forEach(trigger => {
+                    if (trigger) trigger.kill();
+                });
+                this.scrollTriggers = [];
+
+                // Refresh the entire component
                 this.refresh();
             }, 250);
         });
@@ -266,9 +278,13 @@ export class ScrollWords {
     setupConvergeAnimation() {
         const aboutSection = document.getElementById("about");
         const wordsContainer = document.querySelector(".words-container");
+        const aboutThreeContainer = document.getElementById("about-three-container");
         const words = document.querySelectorAll(".about-words");
 
-        if (!aboutSection || !wordsContainer || !words.length) return;
+        if (!aboutSection || !wordsContainer || !words.length || !aboutThreeContainer) return;
+
+        // Initially hide the three container
+        gsap.set(aboutThreeContainer, { opacity: 0 });
 
         // Create ScrollTrigger for the converge animation
         const convergeTrigger = ScrollTrigger.create({
@@ -291,7 +307,23 @@ export class ScrollWords {
             }
         });
 
-        this.scrollTriggers.push(convergeTrigger);
+        // Pin the about-three-container and handle shader rotation
+        const threePinTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%",
+            pin: aboutThreeContainer,
+            pinSpacing: false,
+            scrub: 1,
+            onUpdate: (self) => {
+                // Update shader opacity for rotation animation based on threePinTrigger progress
+                if (window.aboutSketch && window.aboutSketch.updateOpacity) {
+                    window.aboutSketch.updateOpacity(self.progress);
+                }
+            }
+        });
+
+        this.scrollTriggers.push(convergeTrigger, threePinTrigger);
     }
 
     initConvergeAnimation() {
@@ -322,8 +354,9 @@ export class ScrollWords {
 
         const words = document.querySelectorAll(".about-words");
         const wordsContainer = document.querySelector(".words-container");
+        const aboutThreeContainer = document.getElementById("about-three-container");
 
-        if (!wordsContainer) return;
+        if (!wordsContainer || !aboutThreeContainer) return;
 
         // Get the original gap (3rem from CSS)
         const originalGap = 48; // 3rem = 48px (assuming 16px base font size)
@@ -335,6 +368,14 @@ export class ScrollWords {
         // Apply the gap reduction to the container
         gsap.set(wordsContainer, {
             gap: `${currentGap}px`
+        });
+
+        // Fade in the three container as words fade out (starts at 25% progress)
+        const threeContainerFadeStart = 0.25;
+        const threeContainerProgress = Math.max(0, (progress - threeContainerFadeStart) / (1 - threeContainerFadeStart));
+
+        gsap.set(aboutThreeContainer, {
+            opacity: threeContainerProgress
         });
 
         // Fade out words based on scroll progress
@@ -355,6 +396,7 @@ export class ScrollWords {
 
     resetConvergeAnimation() {
         this.isConverging = false;
+        const aboutThreeContainer = document.getElementById("about-three-container");
 
         // Clear fade out words array
         this.fadeOutWords = [];
@@ -370,6 +412,17 @@ export class ScrollWords {
         words.forEach(word => {
             gsap.set(word, { x: 0, y: 0, opacity: 1 });
         });
+
+        // Reset gap to original value
+        const wordsContainer = document.querySelector(".words-container");
+        if (wordsContainer) {
+            gsap.set(wordsContainer, { gap: "3rem" });
+        }
+
+        // Hide the three container again
+        if (aboutThreeContainer) {
+            gsap.set(aboutThreeContainer, { opacity: 0 });
+        }
 
         // Resume infinite scroll animations
         this.animations.forEach(tl => {
