@@ -437,8 +437,13 @@ body.loading-active .custom-scrollbar {
     width: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 3rem;
     z-index: 1;
+}
+
+.about-words * {
+    will-change: transform, opacity;
 }
 
 .about-words {

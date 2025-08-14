@@ -1,5 +1,9 @@
 import { DotLottie } from "@lottiefiles/dotlottie-web";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
+
+gsap.registerPlugin(ScrollTrigger, SplitText);
 
 // Skip Link/Scroll Animation Manager
 export class SkipLinkManager {
@@ -116,7 +120,10 @@ export class ScrollWords {
     constructor(options = {}) {
         this.wordSpacing = options.wordSpacing || 50; // Default 50px spacing between word groups
         this.animations = []; // Store all animations for cleanup
+        this.scrollTriggers = []; // Store ScrollTrigger instances for cleanup
         this.resizeTimeout = null;
+        this.splitTexts = []; // Store SplitText instances for cleanup
+        this.isConverging = false;
         this.init();
         this.setupResize();
     }
@@ -124,20 +131,33 @@ export class ScrollWords {
     init() {
         // Wait for DOM to be ready
         if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () =>
-                this.setupScrolling()
-            );
+            document.addEventListener("DOMContentLoaded", () => {
+                this.setupScrolling();
+                this.setupConvergeAnimation();
+            });
         } else {
             this.setupScrolling();
+            this.setupConvergeAnimation();
         }
     }
 
     refresh() {
-        // Kill all existing animations
+        // Kill all existing animations and triggers
         this.animations.forEach(tl => {
             if (tl) tl.kill();
         });
+        this.scrollTriggers.forEach(trigger => {
+            if (trigger) trigger.kill();
+        });
+        this.splitTexts.forEach(split => {
+            if (split) split.revert();
+        });
+
+        // Clear arrays
         this.animations = [];
+        this.scrollTriggers = [];
+        this.splitTexts = [];
+        this.isConverging = false;
 
         // Clean up existing clones and wrappers
         const existingWrappers = document.querySelectorAll('.words-line-wrapper');
@@ -153,6 +173,7 @@ export class ScrollWords {
 
         // Reinitialize
         this.setupScrolling();
+        this.setupConvergeAnimation();
     }
 
     setupResize() {
@@ -240,5 +261,127 @@ export class ScrollWords {
 
         // Store animation for cleanup
         this.animations.push(tl);
+    }
+
+    setupConvergeAnimation() {
+        const aboutSection = document.getElementById("about");
+        const wordsContainer = document.querySelector(".words-container");
+        const words = document.querySelectorAll(".about-words");
+
+        if (!aboutSection || !wordsContainer || !words.length) return;
+
+        // Create ScrollTrigger for the converge animation
+        const convergeTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=100%",
+            pin: true,
+            pinSpacing: false,
+            scrub: 1,
+            onUpdate: (self) => {
+                this.updateConvergeAnimation(self.progress);
+            },
+            onEnter: () => {
+                if (!this.isConverging) {
+                    this.initConvergeAnimation();
+                }
+            },
+            onLeaveBack: () => {
+                this.resetConvergeAnimation();
+            }
+        });
+
+        this.scrollTriggers.push(convergeTrigger);
+    }
+
+    initConvergeAnimation() {
+        this.isConverging = true;
+        const words = document.querySelectorAll(".about-words");
+
+        // Create SplitText instances and store fade-out words
+        this.fadeOutWords = [];
+
+        words.forEach((wordElement, index) => {
+            const split = new SplitText(wordElement, { type: "words" });
+            this.splitTexts.push(split);
+
+            // Get all word elements
+            const wordSpans = split.words;
+            const totalWords = wordSpans.length;
+
+            // Select words to fade out
+            const fadeOutCount = Math.floor(totalWords);
+            const wordsToFadeOut = this.getRandomElements(wordSpans, fadeOutCount);
+
+            this.fadeOutWords.push(wordsToFadeOut);
+        });
+    }
+
+    updateConvergeAnimation(progress) {
+        if (!this.isConverging) return;
+
+        const words = document.querySelectorAll(".about-words");
+        const wordsContainer = document.querySelector(".words-container");
+
+        if (!wordsContainer) return;
+
+        // Get the original gap (3rem from CSS)
+        const originalGap = 48; // 3rem = 48px (assuming 16px base font size)
+        const minimumGap = 0; // Minimum gap when fully converged
+
+        // Calculate new gap based on scroll progress
+        const currentGap = originalGap - ((originalGap - minimumGap) * progress);
+
+        // Apply the gap reduction to the container
+        gsap.set(wordsContainer, {
+            gap: `${currentGap}px`
+        });
+
+        // Fade out words based on scroll progress
+        words.forEach((wordElement, index) => {
+            if (this.fadeOutWords[index]) {
+                this.fadeOutWords[index].forEach((word, i) => {
+                    // Start fading at 30% progress, stagger each word
+                    const fadeStart = 0.3 + (i * 0.05);
+                    const fadeProgress = Math.max(0, (progress - fadeStart) / (1 - fadeStart));
+
+                    gsap.set(word, {
+                        opacity: 1 - fadeProgress,
+                    });
+                });
+            }
+        });
+    }
+
+    resetConvergeAnimation() {
+        this.isConverging = false;
+
+        // Clear fade out words array
+        this.fadeOutWords = [];
+
+        // Revert all SplitText instances
+        this.splitTexts.forEach(split => {
+            if (split) split.revert();
+        });
+        this.splitTexts = [];
+
+        // Reset word positions and opacity
+        const words = document.querySelectorAll(".about-words");
+        words.forEach(word => {
+            gsap.set(word, { x: 0, y: 0, opacity: 1 });
+        });
+
+        // Resume infinite scroll animations
+        this.animations.forEach(tl => {
+            if (tl && tl.progress) {
+                tl.resume();
+            }
+        });
+    }
+
+    // Utility function to get random elements from an array
+    getRandomElements(array, count) {
+        const shuffled = [...array].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
     }
 }
