@@ -143,6 +143,7 @@ export class Sketch {
                 resolution: { value: new THREE.Vector4() },
                 uColor: { value: this.palette },
                 mouse: { value: new THREE.Vector2(0, 0) },
+                opacity: { value: 0 },
             },
             vertexShader: vertex,
             fragmentShader: selectedFragment,
@@ -157,6 +158,13 @@ export class Sketch {
         );
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
+    }
+
+    // Adjust opacity in the about section
+    updateOpacity(opacityValue) {
+        if (this.material && this.material.uniforms.opacity) {
+            this.material.uniforms.opacity.value = opacityValue;
+        }
     }
 
     // Main render loop. Updates uniforms, handles FPS, and renders the scene.
