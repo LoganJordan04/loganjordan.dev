@@ -11,6 +11,10 @@ export class CustomScrollbar {
         this.dragStartScrollTop = 0;
         this.thumbHeight = 0;
         this.trackHeight = 0;
+        this.smoother = null;
+        this.rafId = null;
+        this.lastScrollTop = 0;
+
         this.createScrollbar();
         this.init();
     }
@@ -32,8 +36,47 @@ export class CustomScrollbar {
         this.scrollbarElement.appendChild(this.thumbElement);
         document.body.appendChild(this.scrollbarElement);
 
-        this.updateThumb();
-        this.setupScrollbarEvents();
+        // Wait for ScrollSmoother to be available
+        this.waitForSmoother();
+    }
+
+    waitForSmoother() {
+        const checkSmoother = () => {
+            if (window.scrollSmoother) {
+                this.smoother = window.scrollSmoother;
+                this.setupScrollbarEvents();
+                this.startScrollTracking();
+                this.updateThumb();
+            } else {
+                setTimeout(checkSmoother, 100);
+            }
+        };
+        checkSmoother();
+    }
+
+    startScrollTracking() {
+        // Use requestAnimationFrame to continuously track scroll changes
+        const trackScroll = () => {
+            if (!this.smoother) return;
+
+            const currentScrollTop = this.getCurrentScroll();
+
+            // Only update if scroll position has changed
+            if (currentScrollTop !== this.lastScrollTop) {
+                this.lastScrollTop = currentScrollTop;
+                this.updateThumb();
+
+                // Show scrollbar when scrolling (but not when dragging)
+                if (!this.isDragging) {
+                    this.showScrollbar();
+                    this.scheduleHide();
+                }
+            }
+
+            this.rafId = requestAnimationFrame(trackScroll);
+        };
+
+        trackScroll();
     }
 
     setupScrollbarEvents() {
@@ -51,61 +94,66 @@ export class CustomScrollbar {
 
         // Click on track to jump
         this.trackElement.addEventListener("click", (e) => {
-            if (e.target === this.trackElement) {
+            if (e.target === this.trackElement && this.smoother) {
                 const rect = this.trackElement.getBoundingClientRect();
                 const clickY = e.clientY - rect.top;
-                const percentage = clickY / rect.height;
-                const maxScroll =
-                    document.documentElement.scrollHeight - window.innerHeight;
-                window.scrollTo({
-                    top: percentage * maxScroll,
-                    behavior: "smooth",
-                });
+                const maxScroll = this.getMaxScroll();
+                const scrollPercentage = clickY / this.trackHeight;
+                const newScrollTop = Math.max(0, Math.min(maxScroll, scrollPercentage * maxScroll));
+
+                this.smoother.scrollTo(newScrollTop, true);
             }
         });
 
         // Thumb dragging
-        this.thumbElement.addEventListener(
-            "mousedown",
-            this.startDrag.bind(this)
-        );
+        this.thumbElement.addEventListener("mousedown", this.startDrag.bind(this));
         document.addEventListener("mousemove", this.drag.bind(this));
         document.addEventListener("mouseup", this.endDrag.bind(this));
 
         // Prevent text selection while dragging
-        this.thumbElement.addEventListener("selectstart", (e) =>
-            e.preventDefault()
-        );
+        this.thumbElement.addEventListener("selectstart", (e) => e.preventDefault());
+    }
+
+    getMaxScroll() {
+        const smoothContent = document.getElementById("smooth-content");
+        if (!smoothContent) return 0;
+        return Math.max(0, smoothContent.scrollHeight - window.innerHeight);
+    }
+
+    getCurrentScroll() {
+        return this.smoother ? Math.max(0, this.smoother.scrollTop()) : 0;
     }
 
     startDrag(e) {
         e.preventDefault();
         this.isDragging = true;
         this.dragStartY = e.clientY;
-        this.dragStartScrollTop =
-            window.pageYOffset || document.documentElement.scrollTop;
+        this.dragStartScrollTop = this.getCurrentScroll();
         this.thumbElement.classList.add("dragging");
         document.body.style.userSelect = "none";
         this.clearHideTimeout();
+        this.showScrollbar();
     }
 
     drag(e) {
-        if (!this.isDragging) return;
+        if (!this.isDragging || !this.smoother) return;
 
         e.preventDefault();
         const deltaY = e.clientY - this.dragStartY;
-        const documentHeight = document.documentElement.scrollHeight;
-        const windowHeight = window.innerHeight;
-        const maxScroll = documentHeight - windowHeight;
+        const maxScroll = this.getMaxScroll();
+
+        if (maxScroll <= 0) return;
+
         const scrollableTrackHeight = this.trackHeight - this.thumbHeight;
 
-        const scrollDelta = (deltaY / scrollableTrackHeight) * maxScroll;
-        const newScrollTop = Math.max(
-            0,
-            Math.min(maxScroll, this.dragStartScrollTop + scrollDelta)
-        );
+        if (scrollableTrackHeight <= 0) return;
 
-        window.scrollTo(0, newScrollTop);
+        // Calculate the scroll delta based on thumb movement
+        const scrollDelta = (deltaY / scrollableTrackHeight) * maxScroll;
+        const newScrollTop = Math.max(0, Math.min(maxScroll, this.dragStartScrollTop + scrollDelta));
+
+        // Use scrollTo without smooth animation for immediate response
+        this.smoother.scrollTo(newScrollTop, false);
     }
 
     endDrag() {
@@ -118,10 +166,12 @@ export class CustomScrollbar {
     }
 
     updateThumb() {
-        const documentHeight = document.documentElement.scrollHeight;
+        const smoothContent = document.getElementById("smooth-content");
+        if (!smoothContent) return;
+
+        const documentHeight = smoothContent.scrollHeight;
         const windowHeight = window.innerHeight;
-        const scrollTop =
-            window.pageYOffset || document.documentElement.scrollTop;
+        const scrollTop = this.getCurrentScroll();
 
         // Only show scrollbar if content is scrollable
         if (documentHeight <= windowHeight) {
@@ -131,17 +181,14 @@ export class CustomScrollbar {
 
         // Calculate thumb height and position
         this.trackHeight = windowHeight;
-        this.thumbHeight = Math.max(
-            (windowHeight / documentHeight) * windowHeight,
-            30
-        );
+        this.thumbHeight = Math.max((windowHeight / documentHeight) * windowHeight, 30);
         const maxScrollTop = documentHeight - windowHeight;
-        const scrollPercentage = scrollTop / maxScrollTop;
-        const thumbTop =
-            scrollPercentage * (this.trackHeight - this.thumbHeight);
+        const scrollPercentage = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+        const thumbTop = scrollPercentage * (this.trackHeight - this.thumbHeight);
 
+        // Apply the calculated values
         this.thumbElement.style.height = `${this.thumbHeight}px`;
-        this.thumbElement.style.top = `${thumbTop}px`;
+        this.thumbElement.style.top = `${Math.max(0, thumbTop)}px`;
     }
 
     showScrollbar() {
@@ -169,49 +216,33 @@ export class CustomScrollbar {
         this.clearHideTimeout();
         this.scrollTimeout = setTimeout(() => {
             this.hideScrollbar();
-        }, 300);
+        }, 1000);
     }
 
     init() {
-        // Listen for scroll events
-        window.addEventListener("scroll", this.handleScroll.bind(this), {
-            passive: true,
-        });
-
-        // Listen for wheel events (mouse wheel)
-        window.addEventListener("wheel", this.handleScroll.bind(this), {
-            passive: true,
-        });
+        // Listen for wheel events to show scrollbar
+        window.addEventListener("wheel", this.handleInteraction.bind(this), { passive: true });
 
         // Listen for touch events (mobile scrolling)
-        window.addEventListener("touchstart", this.handleScroll.bind(this), {
-            passive: true,
-        });
-        window.addEventListener("touchmove", this.handleScroll.bind(this), {
-            passive: true,
-        });
+        window.addEventListener("touchstart", this.handleInteraction.bind(this), { passive: true });
+        window.addEventListener("touchmove", this.handleInteraction.bind(this), { passive: true });
 
         // Listen for resize to update thumb
-        window.addEventListener(
-            "resize",
-            () => {
-                this.updateThumb();
-            },
-            { passive: true }
-        );
+        window.addEventListener("resize", () => {
+            this.updateThumb();
+        }, { passive: true });
 
-        // Listen for content changes
-        const observer = new MutationObserver(() => {
-            setTimeout(() => this.updateThumb(), 100);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+        // Listen for ScrollTrigger refresh
+        if (window.ScrollTrigger) {
+            window.ScrollTrigger.addEventListener("refresh", () => {
+                setTimeout(() => this.updateThumb(), 100);
+            });
+        }
     }
 
-    handleScroll() {
-        // Update thumb position
-        this.updateThumb();
-
-        // Show scrollbar when scrolling
+    handleInteraction() {
+        // This method is called on wheel/touch events
+        // The actual scroll tracking happens in the RAF loop
         if (!this.isDragging) {
             this.showScrollbar();
             this.scheduleHide();

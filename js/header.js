@@ -238,16 +238,11 @@ export class NavManager {
         const targetSection = document.getElementById(sectionId);
         if (!targetSection) return;
 
-        let offset;
-
-        if (sectionId === "hero") {
-            offset = 0;
-        } else {
-            const header = document.getElementById("header");
-            offset = header ? header.offsetHeight : 80;
+        // Add offset for about section, scroll to top for others
+        let targetPosition = targetSection.offsetTop;
+        if (sectionId === 'about') {
+            targetPosition += 110;
         }
-
-        const targetPosition = targetSection.offsetTop - offset;
 
         window.scrollTo({
             top: Math.max(0, targetPosition),

@@ -57,20 +57,6 @@
             </video>
         </div>
 
-        <a
-            id="skip-link"
-            href="#main-content"
-            aria-label="Skip to content"
-        >
-            <p class="skip-text">Skip to content</p>
-            <canvas
-                class="hero-arrow-canvas"
-                width="100"
-                height="100"
-                aria-hidden="true"
-            ></canvas>
-        </a>
-
         <header role="banner">
             <div id="header">
                 <div class="header-container center">
@@ -132,42 +118,88 @@
                     </nav>
                 </div>
             </div>
-        </header>   
+        </header>
 
-        <main id="main-content" role="main">
-            <section id="hero">
-                <div id="hero-three-container"></div>
-                <div class="hero-text-container">
-                    <h1 class="hero-title">Logan Jordan</h1>
-                    <h2 class="hero-subtitle">Designer & Frontend Developer</h2>
-                </div>
-            </section>
+        <div id="smooth-wrapper">
+            <div id="smooth-content">
+                <main id="main-content" role="main">
+                    <section id="hero">
+                        <a
+                            id="skip-link"
+                            href="#main-content"
+                            aria-label="Skip to content"
+                            tabindex="1"
+                        >
+                            <p class="skip-text">Skip to content</p>
+                            <canvas
+                                class="hero-arrow-canvas"
+                                width="100"
+                                height="100"
+                                aria-hidden="true"
+                            ></canvas>
+                        </a>
+                        <div id="hero-three-container"></div>
+                        <div class="hero-text-container">
+                            <h1 class="hero-title">Logan Jordan</h1>
+                            <h2 class="hero-subtitle">
+                                Designer & Frontend Developer
+                            </h2>
+                        </div>
+                    </section>
 
-            <section id="about" class="section-container">
-                <div id="about-three-container"></div> 
-                <div class="words-container">
-                    <p id="words-1" class="about-words" aria-hidden="true">
-                        Elegant Minimal Streamlined Refined
-                    </p>
-                    <p id="words-2" class="about-words" aria-hidden="true">
-                        Imaginative Aesthetic Innovative Bold
-                    </p>
-                    <p id="words-3" class="about-words" aria-hidden="true">
-                        Responsive Accessible Dynamic Functional
-                    </p>
-                    <p id="words-4" class="about-words" aria-hidden="true">
-                        Scalable Intuitive Flexible Inclusive
-                    </p>
-                    <p id="words-5" class="about-words" aria-hidden="true">
-                        Clear Equitable Professional Harmonious
-                    </p>
-                </div>
-            </section>
+                    <section id="about" class="section-container">
+                        <div id="about-three-container"></div>
+                        <div class="words-container">
+                            <p
+                                id="words-1"
+                                class="about-words"
+                                aria-hidden="true"
+                            >
+                                Elegant Minimal Streamlined Refined
+                            </p>
+                            <p
+                                id="words-2"
+                                class="about-words"
+                                aria-hidden="true"
+                            >
+                                Imaginative Aesthetic Innovative Bold
+                            </p>
+                            <p
+                                id="words-3"
+                                class="about-words"
+                                aria-hidden="true"
+                            >
+                                Responsive Accessible Dynamic Functional
+                            </p>
+                            <p
+                                id="words-4"
+                                class="about-words"
+                                aria-hidden="true"
+                            >
+                                Scalable Intuitive Flexible Inclusive
+                            </p>
+                            <p
+                                id="words-5"
+                                class="about-words"
+                                aria-hidden="true"
+                            >
+                                Clear Equitable Professional Harmonious
+                            </p>
+                        </div>
+                    </section>
 
-            <section id="work" class="temp-section-container"></section>
-            <section id="experience" class="temp-section-container"></section>
-            <section id="footer" class="temp-section-container"></section>
-        </main>
+                    <section id="work" class="temp-section-container"></section>
+                    <section
+                        id="experience"
+                        class="temp-section-container"
+                    ></section>
+                    <section
+                        id="footer"
+                        class="temp-section-container"
+                    ></section>
+                </main>
+            </div>
+        </div>
 
         <script type="module" src="/js/main.js"></script>
 
