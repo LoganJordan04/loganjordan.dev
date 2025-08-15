@@ -42,11 +42,21 @@ export class CustomScrollbar {
 
     init() {
         // Listen for wheel events to show scrollbar
-        window.addEventListener("wheel", this.handleInteraction.bind(this), { passive: true });
+        window.addEventListener("wheel", this.handleInteraction.bind(this), {
+            passive: true,
+        });
 
         // Listen for touch events (mobile scrolling)
-        window.addEventListener("touchstart", this.handleInteraction.bind(this), { passive: true });
-        window.addEventListener("touchmove", this.handleInteraction.bind(this), { passive: true });
+        window.addEventListener(
+            "touchstart",
+            this.handleInteraction.bind(this),
+            { passive: true }
+        );
+        window.addEventListener(
+            "touchmove",
+            this.handleInteraction.bind(this),
+            { passive: true }
+        );
 
         // Listen for ScrollTrigger refresh
         if (window.ScrollTrigger) {
@@ -115,19 +125,27 @@ export class CustomScrollbar {
                 const clickY = e.clientY - rect.top;
                 const maxScroll = this.getMaxScroll();
                 const scrollPercentage = clickY / this.trackHeight;
-                const newScrollTop = Math.max(0, Math.min(maxScroll, scrollPercentage * maxScroll));
+                const newScrollTop = Math.max(
+                    0,
+                    Math.min(maxScroll, scrollPercentage * maxScroll)
+                );
 
                 this.smoother.scrollTo(newScrollTop, true);
             }
         });
 
         // Thumb dragging
-        this.thumbElement.addEventListener("mousedown", this.startDrag.bind(this));
+        this.thumbElement.addEventListener(
+            "mousedown",
+            this.startDrag.bind(this)
+        );
         document.addEventListener("mousemove", this.drag.bind(this));
         document.addEventListener("mouseup", this.endDrag.bind(this));
 
         // Prevent text selection while dragging
-        this.thumbElement.addEventListener("selectstart", (e) => e.preventDefault());
+        this.thumbElement.addEventListener("selectstart", (e) =>
+            e.preventDefault()
+        );
     }
 
     getMaxScroll() {
@@ -166,7 +184,10 @@ export class CustomScrollbar {
 
         // Calculate the scroll delta based on thumb movement
         const scrollDelta = (deltaY / scrollableTrackHeight) * maxScroll;
-        const newScrollTop = Math.max(0, Math.min(maxScroll, this.dragStartScrollTop + scrollDelta));
+        const newScrollTop = Math.max(
+            0,
+            Math.min(maxScroll, this.dragStartScrollTop + scrollDelta)
+        );
 
         // Use scrollTo without smooth animation for immediate response
         this.smoother.scrollTo(newScrollTop, false);
@@ -197,10 +218,15 @@ export class CustomScrollbar {
 
         // Calculate thumb height and position
         this.trackHeight = windowHeight;
-        this.thumbHeight = Math.max((windowHeight / documentHeight) * windowHeight, 30);
+        this.thumbHeight = Math.max(
+            (windowHeight / documentHeight) * windowHeight,
+            30
+        );
         const maxScrollTop = documentHeight - windowHeight;
-        const scrollPercentage = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
-        const thumbTop = scrollPercentage * (this.trackHeight - this.thumbHeight);
+        const scrollPercentage =
+            maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+        const thumbTop =
+            scrollPercentage * (this.trackHeight - this.thumbHeight);
 
         // Apply the calculated values
         this.thumbElement.style.height = `${this.thumbHeight}px`;

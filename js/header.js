@@ -240,7 +240,7 @@ export class NavManager {
 
         // Add offset for about section, scroll to top for others
         let targetPosition = targetSection.offsetTop;
-        if (sectionId === 'about') {
+        if (sectionId === "about") {
             targetPosition += 110;
         }
 

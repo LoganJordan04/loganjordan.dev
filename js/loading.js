@@ -8,7 +8,7 @@ export class LoadingManager {
 
         this.init();
         this.setupResize();
-        
+
         this.setupDevSkip();
     }
 
@@ -16,12 +16,12 @@ export class LoadingManager {
         if (!this.loadingContainer || !this.loadingAnimation) return;
 
         // Check if we should skip loading (page refresh scenario)
-        const skipLoading = sessionStorage.getItem('skipLoading');
+        const skipLoading = sessionStorage.getItem("skipLoading");
 
-        if (skipLoading === 'true') {
+        if (skipLoading === "true") {
             // Skip loading animation and remove immediately
             this.removeLoadingScreen();
-            sessionStorage.removeItem('skipLoading');
+            sessionStorage.removeItem("skipLoading");
             return;
         }
 
@@ -48,7 +48,7 @@ export class LoadingManager {
     }
 
     setupResize() {
-        window.addEventListener('resize', () => {
+        window.addEventListener("resize", () => {
             clearTimeout(this.resizeTimeout);
             this.resizeTimeout = setTimeout(() => {
                 this.handleResize();
@@ -58,9 +58,10 @@ export class LoadingManager {
 
     handleResize() {
         // Store current scroll position
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        sessionStorage.setItem('scrollPosition', scrollY.toString());
-        sessionStorage.setItem('skipLoading', 'true');
+        const scrollY =
+            window.pageYOffset || document.documentElement.scrollTop;
+        sessionStorage.setItem("scrollPosition", scrollY.toString());
+        sessionStorage.setItem("skipLoading", "true");
 
         // Refresh the page
         window.location.reload();
@@ -89,7 +90,7 @@ export class LoadingManager {
         document.body.classList.remove("loading-active");
 
         // Restore scroll position if available
-        const savedScrollPosition = sessionStorage.getItem('scrollPosition');
+        const savedScrollPosition = sessionStorage.getItem("scrollPosition");
         if (savedScrollPosition) {
             const scrollY = parseInt(savedScrollPosition, 10);
 
@@ -98,7 +99,7 @@ export class LoadingManager {
                 window.scrollTo(0, scrollY);
 
                 // Clean up
-                sessionStorage.removeItem('scrollPosition');
+                sessionStorage.removeItem("scrollPosition");
             }, 100);
         }
     }
