@@ -219,22 +219,37 @@ export class ScrollWords {
 
     setupConvergeAnimation() {
         const aboutSection = document.getElementById("about");
-        const wordsContainer = document.querySelector(".words-container");
         const aboutThreeContainer = document.getElementById(
             "about-three-container"
         );
+        const wordsContainer = document.querySelector(".words-container");
         const words = document.querySelectorAll(".about-words");
+        const aboutContainer = document.getElementById("about-container");
+        const aboutHeader = document.querySelector(".about-header");
+        const aboutP = document.querySelector(".about-p");
 
         if (
             !aboutSection ||
             !wordsContainer ||
             !words.length ||
-            !aboutThreeContainer
+            !aboutThreeContainer ||
+            !aboutContainer
         )
             return;
 
-        // Initially hide the three container
+        // Initially hide the three container and about container
         gsap.set(aboutThreeContainer, { opacity: 0 });
+        gsap.set(aboutContainer, { opacity: 0, y: 20 });
+
+        // Initially make about content unselectable
+        if (aboutHeader) {
+            aboutHeader.style.userSelect = 'none';
+            aboutHeader.style.pointerEvents = 'none';
+        }
+        if (aboutP) {
+            aboutP.style.userSelect = 'none';
+            aboutP.style.pointerEvents = 'none';
+        }
 
         // Create ScrollTrigger for the converge animation
         const convergeTrigger = ScrollTrigger.create({
@@ -273,7 +288,16 @@ export class ScrollWords {
             },
         });
 
-        this.scrollTriggers.push(convergeTrigger, threePinTrigger);
+        // Pin the about container
+        const aboutContainerPinTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%",
+            pin: aboutContainer,
+            pinSpacing: false,
+        });
+
+        this.scrollTriggers.push(convergeTrigger, threePinTrigger, aboutContainerPinTrigger);
     }
 
     initConvergeAnimation() {
@@ -310,6 +334,9 @@ export class ScrollWords {
         const aboutThreeContainer = document.getElementById(
             "about-three-container"
         );
+        const aboutContainer = document.getElementById("about-container");
+        const aboutHeader = document.querySelector(".about-header");
+        const aboutP = document.querySelector(".about-p");
 
         if (!wordsContainer || !aboutThreeContainer) return;
 
@@ -327,7 +354,7 @@ export class ScrollWords {
             gap: `${Math.max(0, currentGap)}px`,
         });
 
-        // Rest of the method remains the same...
+        // Three container fade in
         const threeContainerFadeStart = 0.25;
         const threeContainerProgress = Math.max(
             0,
@@ -338,6 +365,7 @@ export class ScrollWords {
             opacity: threeContainerProgress,
         });
 
+        // Words fade out
         words.forEach((wordElement, index) => {
             if (this.fadeOutWords[index]) {
                 this.fadeOutWords[index].forEach((word, i) => {
@@ -347,12 +375,86 @@ export class ScrollWords {
                         (progress - fadeStart) / (1 - fadeStart)
                     );
 
+                    const opacity = 1 - fadeProgress;
+
                     gsap.set(word, {
-                        opacity: 1 - fadeProgress,
+                        opacity: opacity,
                     });
+
+                    // Make words unselectable when they start fading out
+                    if (fadeProgress > 0) {
+                        word.style.userSelect = 'none';
+                        word.style.pointerEvents = 'none';
+                    } else {
+                        word.style.userSelect = '';
+                        word.style.pointerEvents = '';
+                    }
                 });
             }
         });
+
+        // About container fade in after words fade out
+        if (aboutContainer) {
+            const aboutContainerFadeStart = 0.8;
+            const aboutContainerProgress = Math.max(
+                0,
+                (progress - aboutContainerFadeStart) / (1 - aboutContainerFadeStart)
+            );
+
+            gsap.set(aboutContainer, {
+                opacity: aboutContainerProgress,
+                y: 50 * (1 - aboutContainerProgress),
+                ease: "power2.out",
+            });
+
+            // Header fades in first
+            if (aboutHeader) {
+                const headerFadeStart = 0.8;
+                const headerProgress = Math.max(
+                    0,
+                    (progress - headerFadeStart) / (1 - headerFadeStart)
+                );
+
+                gsap.set(aboutHeader, {
+                    opacity: headerProgress,
+                    y: 30 * (1 - headerProgress),
+                    ease: "power2.out",
+                });
+
+                // Make header unselectable until it starts fading in
+                if (headerProgress > 0) {
+                    aboutHeader.style.userSelect = '';
+                    aboutHeader.style.pointerEvents = '';
+                } else {
+                    aboutHeader.style.userSelect = 'none';
+                    aboutHeader.style.pointerEvents = 'none';
+                }
+            }
+
+            // Paragraph fades in shortly after header
+            if (aboutP) {
+                const pFadeStart = 0.9;
+                const pProgress = Math.max(
+                    0,
+                    (progress - pFadeStart) / (1 - pFadeStart)
+                );
+
+                gsap.set(aboutP, {
+                    opacity: pProgress,
+                    y: 20 * (1 - pProgress),
+                    ease: "power2.out",
+                });
+
+                // Make paragraph unselectable until it starts fading in
+                if (pProgress > 0) {
+                    aboutP.style.userSelect = '';
+                    aboutP.style.pointerEvents = '';
+                } else {
+                    aboutP.style.userSelect = 'none';
+                    aboutP.style.pointerEvents = 'none';
+                }
+            }
+        }
     }
 
     resetConvergeAnimation() {
@@ -360,12 +462,20 @@ export class ScrollWords {
         const aboutThreeContainer = document.getElementById(
             "about-three-container"
         );
+        const aboutContainer = document.getElementById("about-container");
 
         // Clear fade out words array
         this.fadeOutWords = [];
 
-        // Revert all SplitText instances
+        // Revert all SplitText instances and restore selectability
         this.splitTexts.forEach((split) => {
+            if (split && split.words) {
+                // Restore selectability for all split words
+                split.words.forEach((word) => {
+                    word.style.userSelect = '';
+                    word.style.pointerEvents = '';
+                });
+            }
             if (split) split.revert();
         });
         this.splitTexts = [];
@@ -374,6 +484,9 @@ export class ScrollWords {
         const words = document.querySelectorAll(".about-words");
         words.forEach((word) => {
             gsap.set(word, { x: 0, y: 0, opacity: 1 });
+            // Ensure original words are selectable
+            word.style.userSelect = '';
+            word.style.pointerEvents = '';
         });
 
         // Reset gap to original value
@@ -385,6 +498,11 @@ export class ScrollWords {
         // Hide the three container again
         if (aboutThreeContainer) {
             gsap.set(aboutThreeContainer, { opacity: 0 });
+        }
+
+        // Reset about container
+        if (aboutContainer) {
+            gsap.set(aboutContainer, { opacity: 0, y: 0 });
         }
 
         // Resume infinite scroll animations

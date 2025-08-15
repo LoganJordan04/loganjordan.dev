@@ -231,6 +231,20 @@ body.loading-active .custom-scrollbar {
     cursor: default;
 }
 
+.about-header {
+    margin: 0;
+    width: 90vw;
+    font-size: clamp(4.375rem, 7.9vw, 7.5rem);
+    text-align: center;
+}
+
+.about-p {
+    margin: 2rem 0 0 0;
+    width: min(75vw, 1150px);
+    font-size: clamp(1rem, 2vw, 1.875rem);
+    text-align: justify;
+}
+
 /* endregion */
 
 /* region Header & Nav */
@@ -334,6 +348,7 @@ body.loading-active .custom-scrollbar {
     overflow: hidden;
 }
 
+/* TODO: Fix the visual bug of the bottom */
 #hero-three-container::after {
     content: "";
     position: absolute;
@@ -470,6 +485,18 @@ body.loading-active .custom-scrollbar {
     height: 5rem;
     overflow: hidden;
     width: 100%;
+}
+
+/* TODO: Figure out better positioning w/out vh */
+#about-container {
+    position: relative;
+    top: -133vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    margin: 0 auto;
 }
 
 /* endregion */
