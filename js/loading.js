@@ -8,6 +8,8 @@ export class LoadingManager {
 
         this.init();
         this.setupResize();
+        
+        this.setupDevSkip();
     }
 
     init() {
@@ -34,6 +36,15 @@ export class LoadingManager {
                 this.completeLoading();
             }
         }, 5000);
+    }
+
+    setupDevSkip() {
+        // Dev feature: Click anywhere to skip loading screen
+        this.loadingContainer.addEventListener("click", () => {
+            if (!this.isLoaded) {
+                this.completeLoading();
+            }
+        });
     }
 
     setupResize() {
