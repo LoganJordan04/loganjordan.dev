@@ -121,11 +121,9 @@ export class ScrollWords {
         this.wordSpacing = options.wordSpacing || 50; // Default 50px spacing between word groups
         this.animations = []; // Store all animations for cleanup
         this.scrollTriggers = []; // Store ScrollTrigger instances for cleanup
-        this.resizeTimeout = null;
         this.splitTexts = []; // Store SplitText instances for cleanup
         this.isConverging = false;
         this.init();
-        this.setupResize();
     }
 
     init() {
@@ -139,63 +137,6 @@ export class ScrollWords {
             this.setupScrolling();
             this.setupConvergeAnimation();
         }
-    }
-
-    refresh() {
-        // Kill all existing animations and triggers
-        this.animations.forEach(tl => {
-            if (tl) tl.kill();
-        });
-        this.scrollTriggers.forEach(trigger => {
-            if (trigger) trigger.kill();
-        });
-        this.splitTexts.forEach(split => {
-            if (split) split.revert();
-        });
-
-        // Clear arrays
-        this.animations = [];
-        this.scrollTriggers = [];
-        this.splitTexts = [];
-        this.isConverging = false;
-        
-        // Clean up existing clones and wrappers
-        const existingWrappers = document.querySelectorAll('.words-line-wrapper');
-        existingWrappers.forEach(wrapper => {
-            const originalElement = wrapper.querySelector('.about-words:not([aria-hidden])');
-            if (originalElement && wrapper.parentNode) {
-                // Move original element back to container
-                wrapper.parentNode.insertBefore(originalElement, wrapper);
-                // Remove wrapper and clones
-                wrapper.remove();
-            }
-        });
-
-        // Refresh ScrollTrigger to recalculate positions
-        ScrollTrigger.refresh();
-
-        // Small delay to ensure DOM is updated before reinitializing
-        setTimeout(() => {
-            this.setupScrolling();
-            this.setupConvergeAnimation();
-        }, 50);
-    }
-
-    setupResize() {
-        window.addEventListener('resize', () => {
-            // Debounce resize events
-            clearTimeout(this.resizeTimeout);
-            this.resizeTimeout = setTimeout(() => {
-                // Kill existing scroll triggers immediately on resize start
-                this.scrollTriggers.forEach(trigger => {
-                    if (trigger) trigger.kill();
-                });
-                this.scrollTriggers = [];
-
-                // Refresh the entire component
-                this.refresh();
-            }, 250);
-        });
     }
 
     setupScrolling() {
@@ -358,19 +299,21 @@ export class ScrollWords {
 
         if (!wordsContainer || !aboutThreeContainer) return;
 
-        // Get the original gap (3rem from CSS)
-        const originalGap = 48; // 3rem = 48px (assuming 16px base font size)
-        const minimumGap = 0; // Minimum gap when fully converged
+        // Get the original gap (3rem from CSS) - calculate based on current font size
+        const computedStyle = window.getComputedStyle(document.documentElement);
+        const fontSize = parseFloat(computedStyle.fontSize) || 16;
+        const originalGap = 3 * fontSize; // 3rem in pixels
+        const minimumGap = 0;
 
         // Calculate new gap based on scroll progress
         const currentGap = originalGap - ((originalGap - minimumGap) * progress);
 
-        // Apply the gap reduction to the container
+        // Apply the gap reduction to the container using GSAP for consistency
         gsap.set(wordsContainer, {
-            gap: `${currentGap}px`
+            gap: `${Math.max(0, currentGap)}px`
         });
 
-        // Fade in the three container as words fade out (starts at 25% progress)
+        // Rest of the method remains the same...
         const threeContainerFadeStart = 0.25;
         const threeContainerProgress = Math.max(0, (progress - threeContainerFadeStart) / (1 - threeContainerFadeStart));
 
@@ -378,11 +321,9 @@ export class ScrollWords {
             opacity: threeContainerProgress
         });
 
-        // Fade out words based on scroll progress
         words.forEach((wordElement, index) => {
             if (this.fadeOutWords[index]) {
                 this.fadeOutWords[index].forEach((word, i) => {
-                    // Start fading at 30% progress, stagger each word
                     const fadeStart = 0.3 + (i * 0.05);
                     const fadeProgress = Math.max(0, (progress - fadeStart) / (1 - fadeStart));
 

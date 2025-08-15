@@ -454,11 +454,8 @@ export class HeaderColorManager {
     }
 
     init() {
-        // Check color on scroll and resize
+        // Check color on scroll
         window.addEventListener("scroll", this.handleScroll.bind(this), {
-            passive: true,
-        });
-        window.addEventListener("resize", this.handleResize.bind(this), {
             passive: true,
         });
 
@@ -474,11 +471,6 @@ export class HeaderColorManager {
             });
             this.ticking = true;
         }
-    }
-
-    handleResize() {
-        this.headerRect = null; // Reset cached rect
-        this.checkHeaderColor();
     }
 
     checkHeaderColor() {

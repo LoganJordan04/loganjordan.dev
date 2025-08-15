@@ -40,6 +40,22 @@ export class CustomScrollbar {
         this.waitForSmoother();
     }
 
+    init() {
+        // Listen for wheel events to show scrollbar
+        window.addEventListener("wheel", this.handleInteraction.bind(this), { passive: true });
+
+        // Listen for touch events (mobile scrolling)
+        window.addEventListener("touchstart", this.handleInteraction.bind(this), { passive: true });
+        window.addEventListener("touchmove", this.handleInteraction.bind(this), { passive: true });
+
+        // Listen for ScrollTrigger refresh
+        if (window.ScrollTrigger) {
+            window.ScrollTrigger.addEventListener("refresh", () => {
+                setTimeout(() => this.updateThumb(), 100);
+            });
+        }
+    }
+
     waitForSmoother() {
         const checkSmoother = () => {
             if (window.scrollSmoother) {
@@ -217,27 +233,6 @@ export class CustomScrollbar {
         this.scrollTimeout = setTimeout(() => {
             this.hideScrollbar();
         }, 1000);
-    }
-
-    init() {
-        // Listen for wheel events to show scrollbar
-        window.addEventListener("wheel", this.handleInteraction.bind(this), { passive: true });
-
-        // Listen for touch events (mobile scrolling)
-        window.addEventListener("touchstart", this.handleInteraction.bind(this), { passive: true });
-        window.addEventListener("touchmove", this.handleInteraction.bind(this), { passive: true });
-
-        // Listen for resize to update thumb
-        window.addEventListener("resize", () => {
-            this.updateThumb();
-        }, { passive: true });
-
-        // Listen for ScrollTrigger refresh
-        if (window.ScrollTrigger) {
-            window.ScrollTrigger.addEventListener("refresh", () => {
-                setTimeout(() => this.updateThumb(), 100);
-            });
-        }
     }
 
     handleInteraction() {

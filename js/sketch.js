@@ -76,9 +76,7 @@ export class Sketch {
         // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
         this.initPost();
-        this.resize();
         this.render();
-        this.setupResize();
 
         // FPS tracking variables
         // this.fpsFrameCount = 0;
@@ -110,21 +108,6 @@ export class Sketch {
         const effect1 = new ShaderPass(GrainShader);
         effect1.uniforms["scale"].value = 4;
         this.composer.addPass(effect1);
-    }
-
-    // Set up window resize event listener.
-    setupResize() {
-        window.addEventListener("resize", this.resize.bind(this));
-    }
-
-    // Handle resizing of renderer, composer, and camera.
-    resize() {
-        this.width = this.container.offsetWidth;
-        this.height = this.container.offsetHeight;
-        this.renderer.setSize(this.width, this.height);
-        this.composer.setSize(this.width, this.height);
-        this.camera.aspect = this.width / this.height;
-        this.camera.updateProjectionMatrix();
     }
 
     // Add objects (geometry and material) to the scene.
