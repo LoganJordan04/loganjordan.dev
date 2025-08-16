@@ -366,7 +366,7 @@ export class ScrollWords {
         );
 
         gsap.set(aboutThreeContainer, {
-            opacity: threeContainerProgress,
+            opacity: threeContainerProgress * 0.85, // 85% opacity
         });
 
         // Words fade out
