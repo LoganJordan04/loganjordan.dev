@@ -1,6 +1,7 @@
 import * as THREE from "three";
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import fragment from "./shaders/fragment.glsl";
+import aboutfragment from "./shaders/aboutfragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -13,16 +14,22 @@ const colors = [
     // ["#9359c7", "#b2ecc0", "#5069e3"],
     // ["#226798", "#43bd8f", "#dcfadf"],
 ];
-// Select a random palette and convert to THREE.Color
-const palette = colors[Math.floor(Math.random() * colors.length)].map(
-    (color) => new THREE.Color(color)
-);
+
+// Fragment shader mapping
+const fragmentShaders = {
+    hero: fragment,
+    about: aboutfragment,
+    // Add more sections as needed
+};
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export class Sketch {
     /**
      * @param {Object} options - Configuration options
      * @param {HTMLElement} options.dom - The container DOM element for rendering
+     * @param {string} options.section - The section name to determine which fragment shader to use
+     * @param {number} options.geometryWidth - The width of the plane geometry
+     * @param {number} options.geometryHeight - The height of the plane geometry
      */
     constructor(options) {
         // Create the scene
@@ -30,6 +37,9 @@ export class Sketch {
 
         // Set up renderer and append to container
         this.container = options.dom;
+        this.section = options.section;
+        this.geometryWidth = options.geometryWidth;
+        this.geometryHeight = options.geometryHeight;
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
         this.renderer = new THREE.WebGLRenderer();
@@ -58,12 +68,15 @@ export class Sketch {
 
         this.isPlaying = true; // Animation state
 
+        // Select a random palette and convert to THREE.Color
+        this.palette = colors[Math.floor(Math.random() * colors.length)].map(
+            (color) => new THREE.Color(color)
+        );
+
         // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
         this.initPost();
-        this.resize();
         this.render();
-        this.setupResize();
 
         // FPS tracking variables
         // this.fpsFrameCount = 0;
@@ -84,6 +97,29 @@ export class Sketch {
                 this.material.uniforms.mouse.value.set(x, y);
             }
         });
+
+        window.addEventListener('resize', () => this.onWindowResize());
+    }
+
+    onWindowResize() {
+        this.width = this.container.offsetWidth;
+        this.height = this.container.offsetHeight;
+
+        this.camera.aspect = this.width / this.height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(this.width, this.height);
+        this.composer.setSize(this.width, this.height);
+
+        // Update geometry to match new screen width
+        const distance = this.camera.position.z;
+        const fov = this.camera.fov * (Math.PI / 180);
+        const height = 2 * Math.tan(fov / 2) * distance;
+        const width = height * this.camera.aspect;
+
+        this.geometry.dispose();
+        this.geometry = new THREE.PlaneGeometry(width, this.geometryHeight, 1, 1);
+        this.plane.geometry = this.geometry;
     }
 
     // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
@@ -97,23 +133,11 @@ export class Sketch {
         this.composer.addPass(effect1);
     }
 
-    // Set up window resize event listener.
-    setupResize() {
-        window.addEventListener("resize", this.resize.bind(this));
-    }
-
-    // Handle resizing of renderer, composer, and camera.
-    resize() {
-        this.width = this.container.offsetWidth;
-        this.height = this.container.offsetHeight;
-        this.renderer.setSize(this.width, this.height);
-        this.composer.setSize(this.width, this.height);
-        this.camera.aspect = this.width / this.height;
-        this.camera.updateProjectionMatrix();
-    }
-
     // Add objects (geometry and material) to the scene.
     addObjects() {
+        // Get the appropriate fragment shader for this section
+        const selectedFragment = fragmentShaders[this.section] || fragment;
+
         // Create custom shader material
         this.material = new THREE.ShaderMaterial({
             extensions: {
@@ -123,29 +147,37 @@ export class Sketch {
             uniforms: {
                 time: { value: 0 },
                 resolution: { value: new THREE.Vector4() },
-                uColor: { value: palette },
+                uColor: { value: this.palette },
                 mouse: { value: new THREE.Vector2(0, 0) },
+                opacity: { value: 0 },
             },
             vertexShader: vertex,
-            fragmentShader: fragment,
+            fragmentShader: selectedFragment,
         });
 
-        // Create a plane geometry and mesh
-        this.geometry = new THREE.PlaneGeometry(4, 2, 1, 1);
+        // Calculate geometry width based on screen width and camera parameters
+        const distance = this.camera.position.z;
+        const fov = this.camera.fov * (Math.PI / 180);
+        const height = 2 * Math.tan(fov / 2) * distance;
+        const width = height * this.camera.aspect;
+
+        // Use calculated width instead of geometryWidth parameter
+        this.geometry = new THREE.PlaneGeometry(
+            width,
+            this.geometryHeight,
+            1,
+            1
+        );
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
 
-    // stop() {
-    //     this.isPlaying = false;
-    // }
-    //
-    // play() {
-    //     if(!this.isPlaying){
-    //         this.isPlaying = true;
-    //         this.render()
-    //     }
-    // }
+    // Adjust opacity in the about section
+    updateOpacity(opacityValue) {
+        if (this.material && this.material.uniforms.opacity) {
+            this.material.uniforms.opacity.value = opacityValue;
+        }
+    }
 
     // Main render loop. Updates uniforms, handles FPS, and renders the scene.
     render() {

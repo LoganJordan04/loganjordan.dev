@@ -1,6 +1,7 @@
 uniform float time;
 uniform vec3 uColor[3];
 uniform vec2 mouse;
+uniform float opacity;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -79,11 +80,11 @@ float cnoise(vec3 P){
     return 2.2 * n_xyz;
 }
 
-// Generates a smooth line pattern based on UV and offset
-float lines(vec2 uv, float offset) {
+// A single line
+float line(vec2 uv, float offset) {
     return smoothstep(
     0., 0.5 + offset * 0.2,
-    0.5 * abs((cos(uv.y * 10.) + offset * 1.))
+    0.5 * abs((uv.y * 8.) + offset * 1.)
     );
 }
 
@@ -97,7 +98,7 @@ mat2 rotate2D(float angle) {
 
 // Blends three colors using a smooth gradient based on t
 vec3 threeColorGradient(vec3 color1, vec3 color2, vec3 color3, float t) {
-    t = clamp(t, 0.0, 1.);
+    t = clamp(t, 0., 1.);
 
     float weight1 = smoothstep(0.75, 0., t);
     float weight3 = smoothstep(0.25, 1., t);
@@ -116,24 +117,29 @@ void main() {
     float ripple = exp(-dist * 1.) * 1.;
 
     // Modulate noise input with ripple and time for animation
-    vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.03);
+    vec3 noiseInput = vPosition + vec3(0., 0., ripple) + (time * 0.07);
 
     // Generate Perlin noise value
     float n = cnoise(noiseInput);
-    // float n = cnoise(noiseInput) + 1231231.; // Easter egg 1
+    // float n = cnoise(noiseInput) + 1231232.; // Easter egg 1
 
-    // Rotate and scale the base UVs for pattern distortion
-    vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;
+    // Start rotation at 50% opacity progress
+    float rotationStart = 0.5;
+    float adjustedOpacity = max(0., (opacity - rotationStart) / (1. - rotationStart));
+    float rotationAmount = adjustedOpacity * 0.3;
+
+    // Straight line with pattern distortion
+    vec2 baseUV = rotate2D(n * rotationAmount) * vPosition.xy * 0.2;
 
     // Generate two line patterns with different offsets
-    float basePattern = lines(baseUV, 0.5);
-    float secondPattern = lines(baseUV, 0.01);
+    float basePattern = line(baseUV, 0.5);
+    float secondPattern = line(baseUV, 0.01);
 
     // Blend three colors based on the base pattern
-    vec3 coloredLines = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
+    vec3 coloredLine = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
 
-    // Mix colored lines with black using the second pattern as a mask
-    vec3 finalColor = mix(coloredLines, black, secondPattern);
+    // Mix colored line with black using the second pattern as a mask
+    vec3 finalColor = mix(coloredLine, black, secondPattern);
 
     // Output the final color
     gl_FragColor = vec4(finalColor, 1.);

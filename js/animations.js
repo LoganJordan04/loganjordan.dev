@@ -1,4 +1,9 @@
 import { DotLottie } from "@lottiefiles/dotlottie-web";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
+
+gsap.registerPlugin(ScrollTrigger, SplitText);
 
 // Skip Link/Scroll Animation Manager
 export class SkipLinkManager {
@@ -107,5 +112,492 @@ export class SkipLinkManager {
                 targetElement.removeAttribute("tabindex");
             }, 1000);
         }
+    }
+}
+
+// Word scrolling animation in about section
+export class ScrollWords {
+    constructor(options = {}) {
+        this.wordSpacing = options.wordSpacing || "clamp(25px, 8vw, 50px)";
+        this.animations = [];
+        this.scrollTriggers = [];
+        this.splitTexts = [];
+        this.isConverging = false;
+        this.init();
+    }
+
+    init() {
+        // Wait for DOM to be ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                this.setupScrolling();
+                this.setupConvergeAnimation();
+            });
+        } else {
+            this.setupScrolling();
+            this.setupConvergeAnimation();
+        }
+    }
+
+    setupScrolling() {
+        const words = document.querySelectorAll(".about-words");
+
+        if (!words.length) return;
+
+        words.forEach((word, index) => {
+            this.createInfiniteScroll(word, index);
+        });
+    }
+
+    createInfiniteScroll(element, index) {
+        const isWideScreen = window.innerWidth > 1024;
+
+        // Create wrapper for this line to handle positioning
+        const wrapper = document.createElement("div");
+        wrapper.className = "words-line-wrapper";
+
+        // Insert wrapper and move original element into it
+        element.parentNode.insertBefore(wrapper, element);
+        wrapper.appendChild(element);
+
+        // Create clones - 1 for normal screens, 2 for wide screens
+        const clones = [];
+        const numClones = isWideScreen ? 2 : 1;
+
+        for (let i = 0; i < numClones; i++) {
+            const clone = element.cloneNode(true);
+            clone.setAttribute("aria-hidden", "true");
+            wrapper.appendChild(clone);
+            clones.push(clone);
+        }
+
+        // All elements to animate (original + clones)
+        const allElements = [element, ...clones];
+
+        // Style all elements for horizontal positioning
+        allElements.forEach((el) => {
+            el.style.position = "absolute";
+            el.style.top = "0";
+            el.style.left = "0";
+            el.style.whiteSpace = "nowrap";
+        });
+
+        // Calculate responsive word spacing
+        const getResponsiveSpacing = () => {
+            const vw = window.innerWidth / 100;
+            return Math.max(25, Math.min(8 * vw, 50));
+        };
+
+        // Get the actual text width after positioning
+        const textWidth = element.offsetWidth;
+        const spacing = getResponsiveSpacing();
+        const totalDistance = textWidth + spacing;
+
+        // Position all elements initially
+        allElements.forEach((el, i) => {
+            gsap.set(el, { x: i * totalDistance });
+        });
+
+        // Different speeds for visual interest
+        const speeds = [30, 35, 25, 40, 20]; // pixels per second
+        const speed = speeds[index] || 30;
+        const duration = totalDistance / speed;
+
+        // Create seamless infinite loop with spacing
+        const tl = gsap.timeline({ repeat: -1 });
+        tl.fromTo(
+            allElements,
+            {
+                x: (i) => i * totalDistance,
+            },
+            {
+                x: (i) => i * totalDistance - totalDistance,
+                duration: duration,
+                ease: "none",
+            }
+        );
+
+        // Store animation for cleanup
+        this.animations.push(tl);
+    }
+
+    setupConvergeAnimation() {
+        const aboutSection = document.getElementById("about");
+        const aboutThreeContainer = document.getElementById(
+            "about-three-container"
+        );
+        const wordsContainer = document.querySelector(".words-container");
+        const words = document.querySelectorAll(".about-words");
+        const aboutContainer = document.getElementById("about-container");
+        const aboutHeader = document.querySelector(".about-header");
+        const aboutP = document.querySelector(".about-p");
+
+        if (
+            !aboutSection ||
+            !wordsContainer ||
+            !words.length ||
+            !aboutThreeContainer ||
+            !aboutContainer
+        )
+            return;
+
+        // Initially hide the three container and about container
+        gsap.set(aboutThreeContainer, { opacity: 0 });
+        gsap.set(aboutContainer, { opacity: 0, y: 20 });
+
+        // Initially make about content unselectable
+        if (aboutHeader) {
+            aboutHeader.style.userSelect = "none";
+            aboutHeader.style.pointerEvents = "none";
+        }
+        if (aboutP) {
+            aboutP.style.userSelect = "none";
+            aboutP.style.pointerEvents = "none";
+        }
+
+        // Create ScrollTrigger for the converge animation
+        const convergeTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=100%",
+            pin: true,
+            pinSpacing: false,
+            scrub: 1,
+            onUpdate: (self) => {
+                this.updateConvergeAnimation(self.progress);
+            },
+            onEnter: () => {
+                if (!this.isConverging) {
+                    this.initConvergeAnimation();
+                }
+            },
+            onLeaveBack: () => {
+                this.resetConvergeAnimation();
+            },
+        });
+
+        // Pin the about-three-container and handle shader rotation
+        const threePinTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%",
+            pin: aboutThreeContainer,
+            pinSpacing: false,
+            scrub: 1,
+            onUpdate: (self) => {
+                // Update shader opacity for rotation animation based on threePinTrigger progress
+                if (window.aboutSketch && window.aboutSketch.updateOpacity) {
+                    window.aboutSketch.updateOpacity(self.progress);
+                }
+            },
+        });
+
+        // Pin the about container
+        const aboutContainerPinTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%",
+            pin: aboutContainer,
+            pinSpacing: false,
+        });
+
+        this.scrollTriggers.push(
+            convergeTrigger,
+            threePinTrigger,
+            aboutContainerPinTrigger
+        );
+
+        // Separate trigger for three container and paragraph animation
+        const threeAndParagraphTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%", // Full pin duration
+            scrub: 1,
+            onUpdate: (self) => {
+                this.updateThreeAndParagraphAnimation(self.progress);
+            },
+        });
+
+        this.scrollTriggers.push(
+            convergeTrigger,
+            threePinTrigger,
+            aboutContainerPinTrigger,
+            threeAndParagraphTrigger
+        );
+    }
+
+    initConvergeAnimation() {
+        this.isConverging = true;
+        const words = document.querySelectorAll(".about-words");
+        const aboutP = document.querySelector(".about-p");
+
+        // Create SplitText instances and store fade-out words
+        this.fadeOutWords = [];
+
+        words.forEach((wordElement) => {
+            const split = new SplitText(wordElement, { type: "words" });
+            this.splitTexts.push(split);
+
+            // Get all word elements
+            const wordSpans = split.words;
+            const totalWords = wordSpans.length;
+
+            // Select words to fade out
+            const fadeOutCount = Math.floor(totalWords);
+            const wordsToFadeOut = this.getRandomElements(
+                wordSpans,
+                fadeOutCount
+            );
+
+            this.fadeOutWords.push(wordsToFadeOut);
+        });
+
+        // Create SplitText for the about paragraph
+        if (aboutP) {
+            this.aboutPSplit = new SplitText(aboutP, {
+                type: "words,chars", // Split into both words and chars
+            });
+            this.splitTexts.push(this.aboutPSplit);
+
+            // Set initial state - don't use display: inline-block or whiteSpace
+            gsap.set(this.aboutPSplit.chars, {
+                opacity: 0,
+                y: 20,
+            });
+        }
+    }
+
+    updateConvergeAnimation(progress) {
+        if (!this.isConverging) return;
+
+        const words = document.querySelectorAll(".about-words");
+        const wordsContainer = document.querySelector(".words-container");
+        const aboutThreeContainer = document.getElementById(
+            "about-three-container"
+        );
+        const aboutContainer = document.getElementById("about-container");
+        const aboutHeader = document.querySelector(".about-header");
+
+        if (!wordsContainer || !aboutThreeContainer) return;
+
+        // Get the original gap (3rem from CSS) - calculate based on current font size
+        const computedStyle = window.getComputedStyle(document.documentElement);
+        const fontSize = parseFloat(computedStyle.fontSize) || 16;
+        const originalGap = 3 * fontSize; // 3rem in pixels
+        const minimumGap = 0;
+
+        // Calculate new gap based on scroll progress
+        const currentGap = originalGap - (originalGap - minimumGap) * progress;
+
+        // Apply the gap reduction to the container using GSAP for consistency
+        gsap.set(wordsContainer, {
+            gap: `${Math.max(0, currentGap)}px`,
+        });
+
+        // Three container fade in
+        const threeContainerFadeStart = 0.25;
+        const threeContainerProgress = Math.max(
+            0,
+            (progress - threeContainerFadeStart) / (1 - threeContainerFadeStart)
+        );
+
+        gsap.set(aboutThreeContainer, {
+            opacity: threeContainerProgress * 0.85, // 85% opacity
+        });
+
+        // Words fade out
+        words.forEach((wordElement, index) => {
+            if (this.fadeOutWords[index]) {
+                this.fadeOutWords[index].forEach((word, i) => {
+                    const fadeStart = 0.3 + i * 0.05;
+                    const fadeProgress = Math.max(
+                        0,
+                        (progress - fadeStart) / (1 - fadeStart)
+                    );
+
+                    const opacity = 1 - fadeProgress;
+
+                    gsap.set(word, {
+                        opacity: opacity,
+                    });
+
+                    // Make words unselectable when they start fading out
+                    if (fadeProgress > 0) {
+                        word.style.userSelect = "none";
+                        word.style.pointerEvents = "none";
+                    } else {
+                        word.style.userSelect = "";
+                        word.style.pointerEvents = "";
+                    }
+                });
+            }
+        });
+
+        // About container fade in after words fade out
+        if (aboutContainer) {
+            const aboutContainerFadeStart = 0.8;
+            const aboutContainerProgress = Math.max(
+                0,
+                (progress - aboutContainerFadeStart) /
+                    (1 - aboutContainerFadeStart)
+            );
+
+            gsap.set(aboutContainer, {
+                opacity: aboutContainerProgress,
+                y: 50 * (1 - aboutContainerProgress),
+                ease: "power2.out",
+            });
+
+            // Header fades in first
+            if (aboutHeader) {
+                const headerFadeStart = 0.8;
+                const headerProgress = Math.max(
+                    0,
+                    (progress - headerFadeStart) / (1 - headerFadeStart)
+                );
+
+                gsap.set(aboutHeader, {
+                    opacity: headerProgress,
+                    y: 30 * (1 - headerProgress),
+                    ease: "power2.out",
+                });
+
+                // Make header unselectable until it starts fading in
+                if (headerProgress > 0) {
+                    aboutHeader.style.userSelect = "";
+                    aboutHeader.style.pointerEvents = "";
+                } else {
+                    aboutHeader.style.userSelect = "none";
+                    aboutHeader.style.pointerEvents = "none";
+                }
+            }
+        }
+    }
+
+    updateThreeAndParagraphAnimation(progress) {
+        const aboutP = document.querySelector(".about-p");
+
+        // Paragraph animation using full 150% progress
+        if (aboutP && this.aboutPSplit) {
+            const pFadeStart = 0.5;
+            const pProgress = Math.max(
+                0,
+                (progress - pFadeStart) / (1 - pFadeStart)
+            );
+
+            // Animate individual characters with stagger
+            if (pProgress > 0) {
+                const totalChars = this.aboutPSplit.chars.length;
+                const maxDelay = 0.5;
+
+                this.aboutPSplit.chars.forEach((char, index) => {
+                    const charDelay = (index / totalChars) * maxDelay;
+                    const charProgress = Math.max(
+                        0,
+                        (pProgress - charDelay) * 3
+                    );
+                    const clampedProgress = Math.min(1, charProgress);
+
+                    gsap.set(char, {
+                        opacity: clampedProgress,
+                        y: 20 * (1 - clampedProgress),
+                    });
+                });
+            }
+
+            // Handle selectability
+            if (pProgress > 0.3) {
+                aboutP.style.userSelect = "";
+                aboutP.style.pointerEvents = "";
+            } else {
+                aboutP.style.userSelect = "none";
+                aboutP.style.pointerEvents = "none";
+            }
+        }
+    }
+
+    resetConvergeAnimation() {
+        this.isConverging = false;
+        const aboutThreeContainer = document.getElementById(
+            "about-three-container"
+        );
+        const aboutContainer = document.getElementById("about-container");
+        const aboutP = document.querySelector(".about-p");
+        const aboutHeader = document.querySelector(".about-header");
+
+        // Clear fade out words array
+        this.fadeOutWords = [];
+
+        // Revert all SplitText instances and restore selectability
+        this.splitTexts.forEach((split) => {
+            split.revert();
+        });
+        this.splitTexts = [];
+        this.aboutPSplit = null;
+
+        // Reset word positions and opacity
+        const words = document.querySelectorAll(".about-words");
+        words.forEach((word) => {
+            gsap.set(word, { opacity: 1 });
+            word.style.userSelect = "";
+            word.style.pointerEvents = "";
+        });
+
+        // Reset paragraph
+        if (aboutP) {
+            gsap.set(aboutP, { opacity: 1, y: 0 });
+            aboutP.style.userSelect = "none";
+            aboutP.style.pointerEvents = "none";
+            // Clear any character-level animations that might persist
+            const chars = aboutP.querySelectorAll("div, span");
+            chars.forEach((char) => {
+                gsap.set(char, {
+                    opacity: 1,
+                    y: 0,
+                    display: "",
+                });
+            });
+        }
+
+        // Reset header
+        if (aboutHeader) {
+            gsap.set(aboutHeader, { opacity: 0, y: 0 });
+            aboutHeader.style.userSelect = "none";
+            aboutHeader.style.pointerEvents = "none";
+        }
+
+        // Reset gap to original value
+        const wordsContainer = document.querySelector(".words-container");
+        if (wordsContainer) {
+            gsap.set(wordsContainer, { gap: "3rem" });
+        }
+
+        // Hide the three container again
+        if (aboutThreeContainer) {
+            gsap.set(aboutThreeContainer, { opacity: 0 });
+        }
+
+        // Reset about container
+        if (aboutContainer) {
+            gsap.set(aboutContainer, { opacity: 0, y: 0 });
+        }
+
+        // Reset shader opacity
+        if (window.aboutSketch && window.aboutSketch.updateOpacity) {
+            window.aboutSketch.updateOpacity(0);
+        }
+
+        // Resume infinite scroll animations
+        this.animations.forEach((tl) => {
+            if (tl && tl.progress) {
+                tl.play();
+            }
+        });
+    }
+
+    // Utility function to get random elements from an array
+    getRandomElements(array, count) {
+        const shuffled = [...array].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
     }
 }

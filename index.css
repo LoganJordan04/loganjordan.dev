@@ -6,8 +6,15 @@
     --primary-white: #fafafa;
     --secondary-white: #f5f5f5;
 
-    --font-primary: "Open Sans", sans-serif;
     --font-heading: "Figtree", sans-serif;
+    --font-primary: "Open Sans", sans-serif;
+
+    /*--spacing-xs: 0.25em;*/
+    /*--spacing-sm: 0.5em;*/
+    /*--spacing-md: 1em;*/
+    /*--spacing-lg: 1.25em;*/
+    /*--spacing-xl: 1.875em;*/
+    --spacing-xxl: 3.125em;
 }
 
 *,
@@ -30,6 +37,21 @@ body {
     letter-spacing: 0.02em;
 }
 
+h1, h2 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--primary-white);
+    letter-spacing: 0.03em;
+    line-height: 0.95;
+}
+
+p {
+    font-family: var(--font-primary);
+    font-weight: 400;
+    color: var(--secondary-white);
+    line-height: 1.6;
+}
+
 ul {
     margin: 0;
     padding: 0;
@@ -48,18 +70,32 @@ a {
 
 /* region Utility */
 
+#smooth-wrapper {
+    overflow: hidden;
+}
+
+#smooth-content {
+    will-change: transform;
+}
+
 .center {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.section-container {
+.section-container,
+.temp-section-container {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    padding: var(--spacing-xxl) 0;
+}
+
+.temp-section-container {
     height: 1000px;
-    background-color: var(--primary-black);
 }
 
 /* endregion */
@@ -91,6 +127,7 @@ body.loading-active .custom-scrollbar {
     justify-content: center;
     z-index: 10000;
     opacity: 1;
+    cursor: wait;
     transition: opacity 0.5s ease-out;
     will-change: opacity;
 }
@@ -124,7 +161,7 @@ body.loading-active .custom-scrollbar {
     right: 4px;
     width: 10px;
     height: 100vh;
-    z-index: 9999;
+    z-index: 10001;
     pointer-events: auto;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -181,23 +218,47 @@ body.loading-active .custom-scrollbar {
 /* region Typography */
 
 .hero-title {
-    font-family: "Figtree", sans-serif;
-    font-weight: 600;
-    font-size: clamp(5rem, 9.8vw, 9.375rem);
-    letter-spacing: 0.03em;
-    line-height: 0.95;
     margin: 0;
-    color: var(--primary-white);
+    font-size: clamp(5rem, 9.8vw, 9.375rem);
     cursor: default;
 }
 
 .hero-subtitle {
-    font-family: "Open Sans", sans-serif;
-    font-weight: 400;
-    font-size: clamp(1.25rem, 3.15vw, 2.5rem);
     margin: 1rem 0 0 0;
+    font-size: clamp(1.25rem, 3.15vw, 2.5rem);
+    font-family: var(--font-primary);
+    font-weight: 400;
     color: var(--secondary-white);
+    line-height: normal;
     cursor: default;
+}
+
+.about-words {
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 6.5vw, 3.75rem);
+    font-weight: 600;
+    color: var(--primary-white);
+    letter-spacing: 0.03em;
+    line-height: normal;
+    white-space: nowrap;
+    margin: 0;
+    word-spacing: clamp(25px, 8vw, 50px);
+    cursor: default;
+}
+
+.about-header {
+    margin: 0;
+    width: 90vw;
+    font-size: clamp(4.375rem, 7.9vw, 7.5rem);
+    text-align: center;
+}
+
+.about-p {
+    margin: 2rem 0 0 0;
+    width: min(75vw, 1150px);
+    font-size: clamp(1rem, 2vw, 1.875rem);
+    text-align: justify;
+    word-break: keep-all;
 }
 
 /* endregion */
@@ -293,6 +354,31 @@ body.loading-active .custom-scrollbar {
     min-height: 100vh;
 }
 
+#hero-three-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 110vh;
+    z-index: 0;
+    overflow: hidden;
+}
+
+#hero-three-container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 80px;
+    z-index: 2;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(10, 10, 10, 0.8) 100%
+    );
+}
+
 .hero-text-container {
     display: flex;
     flex-direction: column;
@@ -311,10 +397,24 @@ body.loading-active .custom-scrollbar {
     margin: 0;
     z-index: 2;
     display: flex;
+    flex-direction: column;
     align-items: center;
     color: var(--secondary-white);
     text-decoration: none;
     cursor: default;
+    order: -1;
+}
+
+.skip-text {
+    margin: 0;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#skip-link:focus .skip-text {
+    visibility: visible;
+    opacity: 1;
 }
 
 .hero-arrow-canvas {
@@ -326,31 +426,91 @@ body.loading-active .custom-scrollbar {
 
 /* endregion */
 
-/* region Three.js Container */
+/* region About Section */
 
-#three-container {
+/* TODO: Fix section height */
+#about {
+    position: relative;
+    top: 80px;
+    padding-top: 6em;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#about-three-container {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 110vh;
+    height: 100%;
     z-index: 0;
-    overflow: hidden;
+    opacity: 0;
+    filter: blur(10px);
 }
 
-#three-container::after {
+#about-three-container::before,
+#about-three-container::after {
     content: "";
     position: absolute;
     left: 0;
-    bottom: 0;
     width: 100%;
-    height: 80px;
+    height: 150px;
     z-index: 2;
+}
+
+#about-three-container::before {
+    top: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
+}
+
+#about-three-container::after {
+    bottom: 0;
     background: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
         var(--primary-black) 100%
     );
+}
+
+.words-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3rem;
+    z-index: 1;
+}
+
+.about-words * {
+    will-change: transform, opacity;
+}
+
+.words-line-wrapper {
+    position: relative;
+    height: clamp(3rem, 8.5vw, 5rem);
+    overflow: hidden;
+    width: 100%;
+}
+
+#about-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    padding-bottom: 7em;
+    opacity: 0;
 }
 
 /* endregion */
