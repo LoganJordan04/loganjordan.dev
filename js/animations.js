@@ -302,11 +302,30 @@ export class ScrollWords {
             threePinTrigger,
             aboutContainerPinTrigger
         );
+
+        // Separate trigger for three container and paragraph animation
+        const threeAndParagraphTrigger = ScrollTrigger.create({
+            trigger: wordsContainer,
+            start: "center center",
+            end: "+=150%", // Full pin duration
+            scrub: 1,
+            onUpdate: (self) => {
+                this.updateThreeAndParagraphAnimation(self.progress);
+            },
+        });
+
+        this.scrollTriggers.push(
+            convergeTrigger,
+            threePinTrigger,
+            aboutContainerPinTrigger,
+            threeAndParagraphTrigger
+        );
     }
 
     initConvergeAnimation() {
         this.isConverging = true;
         const words = document.querySelectorAll(".about-words");
+        const aboutP = document.querySelector(".about-p");
 
         // Create SplitText instances and store fade-out words
         this.fadeOutWords = [];
@@ -328,6 +347,38 @@ export class ScrollWords {
 
             this.fadeOutWords.push(wordsToFadeOut);
         });
+
+        // Create SplitText for the about paragraph
+        if (aboutP) {
+            this.aboutPSplit = new SplitText(aboutP, {
+                type: "chars",
+                tag: "span",
+            });
+            this.splitTexts.push(this.aboutPSplit);
+
+            // Create individual timelines for each character
+            this.charTimelines = [];
+
+            this.aboutPSplit.chars.forEach((char, index) => {
+                // Set initial state
+                gsap.set(char, {
+                    opacity: 0,
+                    y: 20,
+                    display: "inline-block",
+                });
+
+                // Create individual timeline for this character
+                const tl = gsap.timeline({ paused: true });
+                tl.to(char, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    ease: "power2.out",
+                });
+
+                this.charTimelines.push(tl);
+            });
+        }
     }
 
     updateConvergeAnimation(progress) {
@@ -340,7 +391,6 @@ export class ScrollWords {
         );
         const aboutContainer = document.getElementById("about-container");
         const aboutHeader = document.querySelector(".about-header");
-        const aboutP = document.querySelector(".about-p");
 
         if (!wordsContainer || !aboutThreeContainer) return;
 
@@ -435,29 +485,45 @@ export class ScrollWords {
                     aboutHeader.style.pointerEvents = "none";
                 }
             }
+        }
+    }
 
-            // Paragraph fades in shortly after header
-            if (aboutP) {
-                const pFadeStart = 0.9;
-                const pProgress = Math.max(
-                    0,
-                    (progress - pFadeStart) / (1 - pFadeStart)
-                );
+    updateThreeAndParagraphAnimation(progress) {
+        const aboutP = document.querySelector(".about-p");
 
-                gsap.set(aboutP, {
-                    opacity: pProgress,
-                    y: 20 * (1 - pProgress),
-                    ease: "power2.out",
+        // Paragraph animation using full 150% progress
+        if (aboutP && this.aboutPSplit && this.charTimelines) {
+            const pFadeStart = 0.5;
+            const pProgress = Math.max(
+                0,
+                (progress - pFadeStart) / (1 - pFadeStart)
+            );
+
+            // Animate individual characters with stagger over the remaining duration
+            if (pProgress > 0) {
+                const totalChars = this.charTimelines.length;
+                const maxDelay = 0.5;
+
+                this.charTimelines.forEach((timeline, index) => {
+                    const charDelay = (index / totalChars) * maxDelay;
+                    const charProgress = Math.max(
+                        0,
+                        (pProgress - charDelay) * 3
+                    );
+                    const clampedProgress = Math.min(1, charProgress);
+
+                    // Update the timeline progress
+                    timeline.progress(clampedProgress);
                 });
+            }
 
-                // Make paragraph unselectable until it starts fading in
-                if (pProgress > 0) {
-                    aboutP.style.userSelect = "";
-                    aboutP.style.pointerEvents = "";
-                } else {
-                    aboutP.style.userSelect = "none";
-                    aboutP.style.pointerEvents = "none";
-                }
+            // Handle selectability
+            if (pProgress > 0.3) {
+                aboutP.style.userSelect = "";
+                aboutP.style.pointerEvents = "";
+            } else {
+                aboutP.style.userSelect = "none";
+                aboutP.style.pointerEvents = "none";
             }
         }
     }
@@ -468,31 +534,55 @@ export class ScrollWords {
             "about-three-container"
         );
         const aboutContainer = document.getElementById("about-container");
+        const aboutP = document.querySelector(".about-p");
+        const aboutHeader = document.querySelector(".about-header");
 
         // Clear fade out words array
         this.fadeOutWords = [];
 
         // Revert all SplitText instances and restore selectability
         this.splitTexts.forEach((split) => {
-            if (split && split.words) {
-                // Restore selectability for all split words
-                split.words.forEach((word) => {
-                    word.style.userSelect = "";
-                    word.style.pointerEvents = "";
-                });
-            }
-            if (split) split.revert();
+            split.revert();
         });
         this.splitTexts = [];
+        this.aboutPSplit = null;
+
+        // Clear character timelines
+        if (this.charTimelines) {
+            this.charTimelines.forEach((tl) => tl.kill());
+            this.charTimelines = [];
+        }
 
         // Reset word positions and opacity
         const words = document.querySelectorAll(".about-words");
         words.forEach((word) => {
-            gsap.set(word, { x: 0, y: 0, opacity: 1 });
-            // Ensure original words are selectable
+            gsap.set(word, { opacity: 1 });
             word.style.userSelect = "";
             word.style.pointerEvents = "";
         });
+
+        // Reset paragraph
+        if (aboutP) {
+            gsap.set(aboutP, { opacity: 1, y: 0 });
+            aboutP.style.userSelect = "none";
+            aboutP.style.pointerEvents = "none";
+            // Clear any character-level animations that might persist
+            const chars = aboutP.querySelectorAll("div, span");
+            chars.forEach((char) => {
+                gsap.set(char, {
+                    opacity: 1,
+                    y: 0,
+                    display: "",
+                });
+            });
+        }
+
+        // Reset header
+        if (aboutHeader) {
+            gsap.set(aboutHeader, { opacity: 0, y: 0 });
+            aboutHeader.style.userSelect = "none";
+            aboutHeader.style.pointerEvents = "none";
+        }
 
         // Reset gap to original value
         const wordsContainer = document.querySelector(".words-container");
@@ -510,10 +600,15 @@ export class ScrollWords {
             gsap.set(aboutContainer, { opacity: 0, y: 0 });
         }
 
+        // Reset shader opacity
+        if (window.aboutSketch && window.aboutSketch.updateOpacity) {
+            window.aboutSketch.updateOpacity(0);
+        }
+
         // Resume infinite scroll animations
         this.animations.forEach((tl) => {
             if (tl && tl.progress) {
-                tl.resume();
+                tl.play();
             }
         });
     }
