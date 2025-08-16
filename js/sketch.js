@@ -97,6 +97,29 @@ export class Sketch {
                 this.material.uniforms.mouse.value.set(x, y);
             }
         });
+
+        window.addEventListener('resize', () => this.onWindowResize());
+    }
+
+    onWindowResize() {
+        this.width = this.container.offsetWidth;
+        this.height = this.container.offsetHeight;
+
+        this.camera.aspect = this.width / this.height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(this.width, this.height);
+        this.composer.setSize(this.width, this.height);
+
+        // Update geometry to match new screen width
+        const distance = this.camera.position.z;
+        const fov = this.camera.fov * (Math.PI / 180);
+        const height = 2 * Math.tan(fov / 2) * distance;
+        const width = height * this.camera.aspect;
+
+        this.geometry.dispose();
+        this.geometry = new THREE.PlaneGeometry(width, this.geometryHeight, 1, 1);
+        this.plane.geometry = this.geometry;
     }
 
     // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
@@ -132,9 +155,15 @@ export class Sketch {
             fragmentShader: selectedFragment,
         });
 
-        // Create a plane geometry and mesh
+        // Calculate geometry width based on screen width and camera parameters
+        const distance = this.camera.position.z;
+        const fov = this.camera.fov * (Math.PI / 180);
+        const height = 2 * Math.tan(fov / 2) * distance;
+        const width = height * this.camera.aspect;
+
+        // Use calculated width instead of geometryWidth parameter
         this.geometry = new THREE.PlaneGeometry(
-            this.geometryWidth,
+            width,
             this.geometryHeight,
             1,
             1
