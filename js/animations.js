@@ -348,32 +348,14 @@ export class ScrollWords {
         // Create SplitText for the about paragraph
         if (aboutP) {
             this.aboutPSplit = new SplitText(aboutP, {
-                type: "chars",
-                tag: "span",
+                type: "words,chars"  // Split into both words and chars
             });
             this.splitTexts.push(this.aboutPSplit);
 
-            // Create individual timelines for each character
-            this.charTimelines = [];
-
-            this.aboutPSplit.chars.forEach((char) => {
-                // Set initial state
-                gsap.set(char, {
-                    opacity: 0,
-                    y: 20,
-                    display: "inline-block",
-                });
-
-                // Create individual timeline for this character
-                const tl = gsap.timeline({ paused: true });
-                tl.to(char, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.6,
-                    ease: "power2.out",
-                });
-
-                this.charTimelines.push(tl);
+            // Set initial state - don't use display: inline-block or whiteSpace
+            gsap.set(this.aboutPSplit.chars, {
+                opacity: 0,
+                y: 20
             });
         }
     }
@@ -489,28 +471,27 @@ export class ScrollWords {
         const aboutP = document.querySelector(".about-p");
 
         // Paragraph animation using full 150% progress
-        if (aboutP && this.aboutPSplit && this.charTimelines) {
+        if (aboutP && this.aboutPSplit) {
             const pFadeStart = 0.5;
             const pProgress = Math.max(
                 0,
                 (progress - pFadeStart) / (1 - pFadeStart)
             );
 
-            // Animate individual characters with stagger over the remaining duration
+            // Animate individual characters with stagger
             if (pProgress > 0) {
-                const totalChars = this.charTimelines.length;
+                const totalChars = this.aboutPSplit.chars.length;
                 const maxDelay = 0.5;
 
-                this.charTimelines.forEach((timeline, index) => {
+                this.aboutPSplit.chars.forEach((char, index) => {
                     const charDelay = (index / totalChars) * maxDelay;
-                    const charProgress = Math.max(
-                        0,
-                        (pProgress - charDelay) * 3
-                    );
+                    const charProgress = Math.max(0, (pProgress - charDelay) * 3);
                     const clampedProgress = Math.min(1, charProgress);
 
-                    // Update the timeline progress
-                    timeline.progress(clampedProgress);
+                    gsap.set(char, {
+                        opacity: clampedProgress,
+                        y: 20 * (1 - clampedProgress)
+                    });
                 });
             }
 
@@ -543,12 +524,6 @@ export class ScrollWords {
         });
         this.splitTexts = [];
         this.aboutPSplit = null;
-
-        // Clear character timelines
-        if (this.charTimelines) {
-            this.charTimelines.forEach((tl) => tl.kill());
-            this.charTimelines = [];
-        }
 
         // Reset word positions and opacity
         const words = document.querySelectorAll(".about-words");
