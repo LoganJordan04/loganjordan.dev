@@ -49,6 +49,7 @@ p {
     font-family: var(--font-primary);
     font-weight: 400;
     color: var(--secondary-white);
+    line-height: 1.6;
 }
 
 ul {
@@ -231,6 +232,19 @@ body.loading-active .custom-scrollbar {
     cursor: default;
 }
 
+.about-words {
+    font-family: var(--font-heading);
+    font-size: 3.75rem;
+    font-weight: 600;
+    color: var(--primary-white);
+    letter-spacing: 0.03em;
+    line-height: normal;
+    white-space: nowrap;
+    margin: 0;
+    word-spacing: 50px;
+    cursor: default;
+}
+
 .about-header {
     margin: 0;
     width: 90vw;
@@ -243,6 +257,11 @@ body.loading-active .custom-scrollbar {
     width: min(75vw, 1150px);
     font-size: clamp(1rem, 2vw, 1.875rem);
     text-align: justify;
+    word-break: keep-all;
+}
+
+.about-p > span {
+    display: inline !important;
 }
 
 /* endregion */
@@ -478,18 +497,6 @@ body.loading-active .custom-scrollbar {
 
 .about-words * {
     will-change: transform, opacity;
-}
-
-.about-words {
-    font-family: var(--font-heading);
-    font-size: 3.75rem;
-    font-weight: 600;
-    color: var(--primary-white);
-    letter-spacing: 0.03em;
-    white-space: nowrap;
-    margin: 0;
-    word-spacing: 50px;
-    cursor: default;
 }
 
 .words-line-wrapper {
