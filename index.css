@@ -497,7 +497,7 @@ body.loading-active .custom-scrollbar {
 
 .words-line-wrapper {
     position: relative;
-    height: clamp(2.5rem, 6.5vw, 5rem);
+    height: clamp(3rem, 8.5vw, 5rem);
     overflow: hidden;
     width: 100%;
 }
