@@ -428,6 +428,7 @@ body.loading-active .custom-scrollbar {
 
 /* region About Section */
 
+/* TODO: Fix section height */
 #about {
     position: relative;
     top: 80px;
