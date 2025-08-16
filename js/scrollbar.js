@@ -12,7 +12,6 @@ export class CustomScrollbar {
         this.thumbHeight = 0;
         this.trackHeight = 0;
         this.smoother = null;
-        this.rafId = null;
         this.lastScrollTop = 0;
 
         this.createScrollbar();
@@ -99,7 +98,7 @@ export class CustomScrollbar {
                 }
             }
 
-            this.rafId = requestAnimationFrame(trackScroll);
+            requestAnimationFrame(trackScroll);
         };
 
         trackScroll();

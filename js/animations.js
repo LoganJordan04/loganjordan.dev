@@ -150,9 +150,6 @@ export class ScrollWords {
     }
 
     createInfiniteScroll(element, index) {
-        // Get the container and text dimensions
-        const container = element.parentNode;
-        const containerWidth = container.offsetWidth;
         const isWideScreen = window.innerWidth > 1024;
 
         // Create wrapper for this line to handle positioning
@@ -330,7 +327,7 @@ export class ScrollWords {
         // Create SplitText instances and store fade-out words
         this.fadeOutWords = [];
 
-        words.forEach((wordElement, index) => {
+        words.forEach((wordElement) => {
             const split = new SplitText(wordElement, { type: "words" });
             this.splitTexts.push(split);
 
@@ -359,7 +356,7 @@ export class ScrollWords {
             // Create individual timelines for each character
             this.charTimelines = [];
 
-            this.aboutPSplit.chars.forEach((char, index) => {
+            this.aboutPSplit.chars.forEach((char) => {
                 // Set initial state
                 gsap.set(char, {
                     opacity: 0,
