@@ -118,10 +118,10 @@ export class SkipLinkManager {
 // Word scrolling animation in about section
 export class ScrollWords {
     constructor(options = {}) {
-        this.wordSpacing = options.wordSpacing || 50; // Default 50px spacing between word groups
-        this.animations = []; // Store all animations for cleanup
-        this.scrollTriggers = []; // Store ScrollTrigger instances for cleanup
-        this.splitTexts = []; // Store SplitText instances for cleanup
+        this.wordSpacing = options.wordSpacing || "clamp(25px, 8vw, 50px)";
+        this.animations = [];
+        this.scrollTriggers = [];
+        this.splitTexts = [];
         this.isConverging = false;
         this.init();
     }
@@ -182,9 +182,16 @@ export class ScrollWords {
             el.style.whiteSpace = "nowrap";
         });
 
+        // Calculate responsive word spacing
+        const getResponsiveSpacing = () => {
+            const vw = window.innerWidth / 100;
+            return Math.max(25, Math.min(8 * vw, 50));
+        };
+
         // Get the actual text width after positioning
         const textWidth = element.offsetWidth;
-        const totalDistance = textWidth + this.wordSpacing;
+        const spacing = getResponsiveSpacing();
+        const totalDistance = textWidth + spacing;
 
         // Position all elements initially
         allElements.forEach((el, i) => {
@@ -348,14 +355,14 @@ export class ScrollWords {
         // Create SplitText for the about paragraph
         if (aboutP) {
             this.aboutPSplit = new SplitText(aboutP, {
-                type: "words,chars"  // Split into both words and chars
+                type: "words,chars", // Split into both words and chars
             });
             this.splitTexts.push(this.aboutPSplit);
 
             // Set initial state - don't use display: inline-block or whiteSpace
             gsap.set(this.aboutPSplit.chars, {
                 opacity: 0,
-                y: 20
+                y: 20,
             });
         }
     }
@@ -485,12 +492,15 @@ export class ScrollWords {
 
                 this.aboutPSplit.chars.forEach((char, index) => {
                     const charDelay = (index / totalChars) * maxDelay;
-                    const charProgress = Math.max(0, (pProgress - charDelay) * 3);
+                    const charProgress = Math.max(
+                        0,
+                        (pProgress - charDelay) * 3
+                    );
                     const clampedProgress = Math.min(1, charProgress);
 
                     gsap.set(char, {
                         opacity: clampedProgress,
-                        y: 20 * (1 - clampedProgress)
+                        y: 20 * (1 - clampedProgress),
                     });
                 });
             }

@@ -235,14 +235,14 @@ body.loading-active .custom-scrollbar {
 
 .about-words {
     font-family: var(--font-heading);
-    font-size: 3.75rem;
+    font-size: clamp(2.5rem, 6.5vw, 3.75rem);
     font-weight: 600;
     color: var(--primary-white);
     letter-spacing: 0.03em;
     line-height: normal;
     white-space: nowrap;
     margin: 0;
-    word-spacing: 50px;
+    word-spacing: clamp(25px, 8vw, 50px);
     cursor: default;
 }
 
@@ -497,7 +497,7 @@ body.loading-active .custom-scrollbar {
 
 .words-line-wrapper {
     position: relative;
-    height: 5rem;
+    height: clamp(2.5rem, 6.5vw, 5rem);
     overflow: hidden;
     width: 100%;
 }
