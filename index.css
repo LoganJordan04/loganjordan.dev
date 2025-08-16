@@ -414,14 +414,23 @@ body.loading-active .custom-scrollbar {
 /* region About Section */
 
 #about {
+    position: relative;
+    top: 80px;
     padding-top: 6em;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #about-three-container {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     z-index: 0;
+    opacity: 0;
 }
 
 #about-three-container::before,
@@ -453,10 +462,12 @@ body.loading-active .custom-scrollbar {
 }
 
 .words-container {
-    overflow: hidden;
-    position: relative;
-    top: -82vh;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 100%;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -487,16 +498,14 @@ body.loading-active .custom-scrollbar {
     width: 100%;
 }
 
-/* TODO: Figure out better positioning w/out vh */
 #about-container {
-    position: relative;
-    top: -133vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 2;
-    margin: 0 auto;
+    padding-bottom: 7em;
+    opacity: 0;
 }
 
 /* endregion */

@@ -243,12 +243,12 @@ export class ScrollWords {
 
         // Initially make about content unselectable
         if (aboutHeader) {
-            aboutHeader.style.userSelect = 'none';
-            aboutHeader.style.pointerEvents = 'none';
+            aboutHeader.style.userSelect = "none";
+            aboutHeader.style.pointerEvents = "none";
         }
         if (aboutP) {
-            aboutP.style.userSelect = 'none';
-            aboutP.style.pointerEvents = 'none';
+            aboutP.style.userSelect = "none";
+            aboutP.style.pointerEvents = "none";
         }
 
         // Create ScrollTrigger for the converge animation
@@ -297,7 +297,11 @@ export class ScrollWords {
             pinSpacing: false,
         });
 
-        this.scrollTriggers.push(convergeTrigger, threePinTrigger, aboutContainerPinTrigger);
+        this.scrollTriggers.push(
+            convergeTrigger,
+            threePinTrigger,
+            aboutContainerPinTrigger
+        );
     }
 
     initConvergeAnimation() {
@@ -383,11 +387,11 @@ export class ScrollWords {
 
                     // Make words unselectable when they start fading out
                     if (fadeProgress > 0) {
-                        word.style.userSelect = 'none';
-                        word.style.pointerEvents = 'none';
+                        word.style.userSelect = "none";
+                        word.style.pointerEvents = "none";
                     } else {
-                        word.style.userSelect = '';
-                        word.style.pointerEvents = '';
+                        word.style.userSelect = "";
+                        word.style.pointerEvents = "";
                     }
                 });
             }
@@ -398,7 +402,8 @@ export class ScrollWords {
             const aboutContainerFadeStart = 0.8;
             const aboutContainerProgress = Math.max(
                 0,
-                (progress - aboutContainerFadeStart) / (1 - aboutContainerFadeStart)
+                (progress - aboutContainerFadeStart) /
+                    (1 - aboutContainerFadeStart)
             );
 
             gsap.set(aboutContainer, {
@@ -423,11 +428,11 @@ export class ScrollWords {
 
                 // Make header unselectable until it starts fading in
                 if (headerProgress > 0) {
-                    aboutHeader.style.userSelect = '';
-                    aboutHeader.style.pointerEvents = '';
+                    aboutHeader.style.userSelect = "";
+                    aboutHeader.style.pointerEvents = "";
                 } else {
-                    aboutHeader.style.userSelect = 'none';
-                    aboutHeader.style.pointerEvents = 'none';
+                    aboutHeader.style.userSelect = "none";
+                    aboutHeader.style.pointerEvents = "none";
                 }
             }
 
@@ -447,11 +452,11 @@ export class ScrollWords {
 
                 // Make paragraph unselectable until it starts fading in
                 if (pProgress > 0) {
-                    aboutP.style.userSelect = '';
-                    aboutP.style.pointerEvents = '';
+                    aboutP.style.userSelect = "";
+                    aboutP.style.pointerEvents = "";
                 } else {
-                    aboutP.style.userSelect = 'none';
-                    aboutP.style.pointerEvents = 'none';
+                    aboutP.style.userSelect = "none";
+                    aboutP.style.pointerEvents = "none";
                 }
             }
         }
@@ -472,8 +477,8 @@ export class ScrollWords {
             if (split && split.words) {
                 // Restore selectability for all split words
                 split.words.forEach((word) => {
-                    word.style.userSelect = '';
-                    word.style.pointerEvents = '';
+                    word.style.userSelect = "";
+                    word.style.pointerEvents = "";
                 });
             }
             if (split) split.revert();
@@ -485,8 +490,8 @@ export class ScrollWords {
         words.forEach((word) => {
             gsap.set(word, { x: 0, y: 0, opacity: 1 });
             // Ensure original words are selectable
-            word.style.userSelect = '';
-            word.style.pointerEvents = '';
+            word.style.userSelect = "";
+            word.style.pointerEvents = "";
         });
 
         // Reset gap to original value
