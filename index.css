@@ -89,7 +89,6 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     width: 100%;
     padding: var(--spacing-xxl) 0;
 }
@@ -261,6 +260,17 @@ body.loading-active .custom-scrollbar {
     word-break: keep-all;
 }
 
+.section-header {
+    margin: 0;
+    width: 90vw;
+    font-size: clamp(5rem, 12vw, 9.375rem);
+    text-align: center;
+}
+
+.skills-header {
+    font-size: clamp(5.625rem, 12vw, 9.375rem);
+}
+
 /* endregion */
 
 /* region Header & Nav */
@@ -430,6 +440,11 @@ body.loading-active .custom-scrollbar {
 
 /* TODO: Fix section height */
 #about {
+    height: 300vh;
+    position: relative;
+}
+
+#about-scroll-container {
     position: relative;
     top: 80px;
     padding-top: 6em;
@@ -511,6 +526,11 @@ body.loading-active .custom-scrollbar {
     z-index: 2;
     padding-bottom: 7em;
     opacity: 0;
+}
+
+#skills-container {
+    position: relative;
+    top: 145vh;
 }
 
 /* endregion */
