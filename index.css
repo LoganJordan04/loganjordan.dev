@@ -45,6 +45,11 @@ h1, h2 {
     line-height: 0.95;
 }
 
+h3 {
+    font-family: var(--font-primary);
+    color: var(--primary-white);
+}
+
 p {
     font-family: var(--font-primary);
     font-weight: 400;
@@ -271,6 +276,19 @@ body.loading-active .custom-scrollbar {
     font-size: clamp(5.625rem, 12vw, 9.375rem);
 }
 
+.skills-sub {
+    margin: 6.25rem 0 0 0;
+    padding-left: 3.125rem;
+    width: min(75vw, 1150px);
+    font-size: 5rem;
+    font-weight: 300;
+    text-align: start;
+    z-index: 0;
+    
+    user-select: none;
+    pointer-events: none;
+}
+
 /* endregion */
 
 /* region Header & Nav */
@@ -438,7 +456,6 @@ body.loading-active .custom-scrollbar {
 
 /* region About Section */
 
-/* TODO: Fix section height */
 #about {
     height: 300vh;
     position: relative;
@@ -533,41 +550,25 @@ body.loading-active .custom-scrollbar {
     top: 145vh;
 }
 
-/* endregion */
-
-/* region Glass Card */
-
-#draggable-card {
+.glass-card {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 31vh;
+    width: min(75vw, 1150px);
+    height: 170px;
     z-index: 2;
-    color: #fafafa;
-    padding: 5em 10em;
     border-radius: 16px;
-    cursor: grab;
-    font-size: 1.2rem;
-    font-family: "Open Sans", sans-serif;
+    transition: opacity 0.26s ease-out;
+    --fx-filter: blur(2px) contrast(1.2) liquid-glass(2, 10, 0.5) drop-shadow(-8px -10px 46px #0000005f);
 }
 
-#draggable-card.dragging {
-    cursor: grabbing;
+.glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2);
 }
-
-/*.glass-card {*/
-/*    transition: opacity 0.26s ease-out;*/
-/*    --fx-filter: blur(2px) contrast(1.2) liquid-glass(2, 10, 0.5) drop-shadow(-8px -10px 46px #0000005f);*/
-/*}*/
-
-/*.glass-card::before {*/
-/*    content: "";*/
-/*    position: absolute;*/
-/*    inset: 0;*/
-/*    z-index: 0;*/
-/*    overflow: hidden;*/
-/*    border-radius: 16px;*/
-/*    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2);*/
-/*}*/
 
 /* endregion */
