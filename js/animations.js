@@ -601,3 +601,46 @@ export class ScrollWords {
         return shuffled.slice(0, count);
     }
 }
+
+// Glass Card Parallax Manager
+export class GlassCardParallax {
+    constructor() {
+        this.glassCard = document.querySelector('.glass-card');
+        this.skillsContainer = document.getElementById('skills-container');
+        this.scrollTrigger = null;
+
+        if (this.glassCard && this.skillsContainer) {
+            this.init();
+        }
+    }
+
+    init() {
+        this.setupParallaxEffect();
+    }
+
+    setupParallaxEffect() {
+        // Create the parallax scroll trigger
+        this.scrollTrigger = ScrollTrigger.create({
+            trigger: this.skillsContainer,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1.5,
+            onUpdate: (self) => {
+                this.updateParallax(self.progress);
+            }
+        });
+    }
+
+    updateParallax(progress) {
+        if (!this.glassCard) return;
+        
+        const parallaxOffset = (progress - 0.5) * 100;
+
+        // Apply only vertical parallax movement
+        gsap.set(this.glassCard, {
+            y: parallaxOffset,
+            force3D: true,
+            ease: "none"
+        });
+    }
+}
