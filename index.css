@@ -283,7 +283,6 @@ body.loading-active .custom-scrollbar {
     font-size: 5rem;
     font-weight: 300;
     text-align: start;
-    z-index: 0;
 }
 
 /* endregion */
@@ -545,33 +544,44 @@ body.loading-active .custom-scrollbar {
 #skills-container {
     position: relative;
     top: 145vh;
+    min-height: 100vh;
+    padding: 3rem 0;
 }
 
-.skill-wrapper {
-    margin: 2.75rem 0;
+.skills-content {
+    position: relative;
+    width: 100%;
+    height: 80vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 100%;
 }
 
-.design-container {
-    margin: 1.875rem 0;
-    position: relative;
+.glass-card-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
-    height: 10.625rem;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
 }
 
 .glass-card {
-    position: absolute;
-    top: 0;
+    position: relative;
     width: min(75vw, 1150px);
-    height: 100%;
-    z-index: 2;
+    height: 16.875rem;
     border-radius: 16px;
-    transition: opacity 0.26s ease-out;
-    --fx-filter: blur(2px) liquid-glass(2, 16, 0.2);
+    transition: transform 0.1s ease;
+    --fx-filter: liquid-glass(2, 25, 0.2);
+    top: 0;
+    left: 0;
+    cursor: grab;
+    user-select: none;
+    pointer-events: auto;
 }
 
 .glass-card::before {
@@ -584,11 +594,31 @@ body.loading-active .custom-scrollbar {
     box-shadow:
         inset 1rem 1rem 1.5rem rgba(0, 0, 0, 0.3),
         inset -1rem -1rem 1.5rem rgba(40, 40, 40, 0.2),
-        
         inset 0 1px 1px rgba(255, 255, 255, 0.5),
         inset 1px 0 1px rgba(255, 255, 255, 0.2),
         inset -1px 0 1px rgba(255, 255, 255, 0.2),
         inset 0 -1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.skills-list {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 2rem 0;
+    z-index: 1;
+}
+
+.skill-item {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100% / 3);
+    position: relative;
 }
 
 /* endregion */
