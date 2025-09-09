@@ -2,7 +2,7 @@ import { Sketch } from "./sketch.js";
 import { LoadingManager } from "./loading.js";
 import { CustomScrollbar } from "./scrollbar.js";
 import { NavManager, HeaderManager, HeaderColorManager } from "./header.js";
-import { SkipLinkManager, ScrollWords, GlassCardParallax } from "./animations.js";
+import { SkipLinkManager, ScrollWords, GlassCardSnap } from "./animations.js";
 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -57,7 +57,7 @@ function initializeApp() {
     new SkipLinkManager();
     
     new ScrollWords();
-    new GlassCardParallax();
+    new GlassCardSnap();
 
     // Make smoother globally accessible for other components
     window.scrollSmoother = smoother;

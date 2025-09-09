@@ -602,45 +602,329 @@ export class ScrollWords {
     }
 }
 
-// Glass Card Parallax Manager
-export class GlassCardParallax {
+export class GlassCardSnap {
     constructor() {
-        this.glassCard = document.querySelector('.glass-card');
-        this.skillsContainer = document.getElementById('skills-container');
-        this.scrollTrigger = null;
+        this.glassCard = document.querySelector(".glass-card")
+        this.skillItems = document.querySelectorAll(".skill-item")
+        this.skillsContainer = document.getElementById("skills-container")
+        this.isDragging = false
+        this.dragOffset = { x: 0, y: 0 }
+        this.scrollTrigger = null
+        this.currentTargetIndex = 0
+        this.isSnapping = false
+        this.dragAnimationFrame = null
+        this.blurUpdateFrame = null
+        this.lastBlurUpdate = 0
+        this.blurThrottleDelay = 16 // ~60fps
 
-        if (this.glassCard && this.skillsContainer) {
-            this.init();
+        if (this.glassCard && this.skillItems.length && this.skillsContainer) {
+            this.init()
         }
     }
 
     init() {
-        this.setupParallaxEffect();
+        this.setupDragging()
+        this.createScrollTrigger()
+        this.updateBlurEffect()
+        this.snapToSkill(0)
     }
 
-    setupParallaxEffect() {
-        // Create the parallax scroll trigger
+    setupDragging() {
+        this.glassCard.style.cursor = "grab"
+
+        // Mouse events
+        this.glassCard.addEventListener("mousedown", this.startDrag.bind(this))
+        document.addEventListener("mousemove", this.onDrag.bind(this))
+        document.addEventListener("mouseup", this.endDrag.bind(this))
+
+        // Touch events
+        this.glassCard.addEventListener("touchstart", this.startDrag.bind(this), { passive: false })
+        document.addEventListener("touchmove", this.onDrag.bind(this), { passive: false })
+        document.addEventListener("touchend", this.endDrag.bind(this))
+    }
+
+    startDrag(e) {
+        e.preventDefault()
+        this.isDragging = true
+        this.glassCard.style.cursor = "grabbing"
+
+        // Kill any running animations
+        gsap.killTweensOf(this.glassCard)
+        if (this.dragAnimationFrame) {
+            cancelAnimationFrame(this.dragAnimationFrame)
+        }
+        if (this.blurUpdateFrame) {
+            cancelAnimationFrame(this.blurUpdateFrame)
+        }
+
+        // Disable scroll trigger during drag
+        if (this.scrollTrigger) {
+            this.scrollTrigger.disable()
+        }
+
+        const clientX = e.clientX || e.touches[0].clientX
+        const clientY = e.clientY || e.touches[0].clientY
+
+        const cardRect = this.glassCard.getBoundingClientRect()
+        const cardCenterX = cardRect.left + cardRect.width / 2
+        const cardCenterY = cardRect.top + cardRect.height / 2
+
+        this.dragOffset.x = clientX - cardCenterX
+        this.dragOffset.y = clientY - cardCenterY
+    }
+
+    onDrag(e) {
+        if (!this.isDragging) return
+        e.preventDefault()
+
+        const clientX = e.clientX || e.touches[0].clientX
+        const clientY = e.clientY || e.touches[0].clientY
+
+        if (this.dragAnimationFrame) {
+            cancelAnimationFrame(this.dragAnimationFrame)
+        }
+
+        this.dragAnimationFrame = requestAnimationFrame(() => {
+            const skillsContent = document.querySelector(".skills-content")
+            if (!skillsContent) return
+
+            const contentRect = skillsContent.getBoundingClientRect()
+            const contentCenterX = contentRect.left + contentRect.width / 2
+            const contentCenterY = contentRect.top + contentRect.height / 2
+
+            const newX = clientX - this.dragOffset.x - contentCenterX
+            const newY = clientY - this.dragOffset.y - contentCenterY
+
+            gsap.set(this.glassCard, {
+                x: newX,
+                y: newY,
+            })
+
+            this.throttledBlurUpdate()
+        })
+    }
+
+    throttledBlurUpdate() {
+        const now = Date.now()
+        if (now - this.lastBlurUpdate >= this.blurThrottleDelay) {
+            this.lastBlurUpdate = now
+            if (this.blurUpdateFrame) {
+                cancelAnimationFrame(this.blurUpdateFrame)
+            }
+            this.blurUpdateFrame = requestAnimationFrame(() => {
+                this.updateBlurEffect()
+            })
+        }
+    }
+
+    endDrag() {
+        if (!this.isDragging) return
+
+        this.isDragging = false
+        this.glassCard.style.cursor = "grab"
+
+        if (this.dragAnimationFrame) {
+            cancelAnimationFrame(this.dragAnimationFrame)
+            this.dragAnimationFrame = null
+        }
+        if (this.blurUpdateFrame) {
+            cancelAnimationFrame(this.blurUpdateFrame)
+            this.blurUpdateFrame = null
+        }
+
+        this.findAndSnapToClosestSkill()
+        
+        // Re-enable scroll trigger
+        if (this.scrollTrigger) {
+            this.scrollTrigger.enable()
+        }
+    }
+
+    createScrollTrigger() {
         this.scrollTrigger = ScrollTrigger.create({
             trigger: this.skillsContainer,
             start: "top bottom",
             end: "bottom top",
-            scrub: 1.5,
-            onUpdate: (self) => {
-                this.updateParallax(self.progress);
-            }
-        });
+            onUpdate: () => {
+                if (!this.isDragging) {
+                    this.updateCardPosition()
+                }
+            },
+        })
     }
 
-    updateParallax(progress) {
-        if (!this.glassCard) return;
-        
-        const parallaxOffset = (progress - 0.5) * 100;
+    findAndSnapToClosestSkill() {
+        const skillsContent = document.querySelector(".skills-content")
+        if (!skillsContent) return
 
-        // Apply only vertical parallax movement
-        gsap.set(this.glassCard, {
-            y: parallaxOffset,
-            force3D: true,
-            ease: "none"
-        });
+        // Get the card's current transform values
+        const currentX = gsap.getProperty(this.glassCard, "x")
+        const currentY = gsap.getProperty(this.glassCard, "y")
+
+        // Get the skills content center position
+        const contentRect = skillsContent.getBoundingClientRect()
+        const contentCenterX = contentRect.left + contentRect.width / 2
+        const contentCenterY = contentRect.top + contentRect.height / 2
+
+        // Calculate the card's actual center position in viewport
+        const cardCenterX = contentCenterX + currentX
+        const cardCenterY = contentCenterY + currentY
+
+        let targetIndex = 0
+        let foundOverlapping = false
+
+        // Check which skill item the card is currently hovering over
+        this.skillItems.forEach((item, index) => {
+            if (foundOverlapping) return // Skip if we already found one
+
+            const itemRect = item.getBoundingClientRect()
+
+            // Check if card center is within the skill item bounds
+            const isWithinX = cardCenterX >= itemRect.left && cardCenterX <= itemRect.right
+            const isWithinY = cardCenterY >= itemRect.top && cardCenterY <= itemRect.bottom
+
+            if (isWithinX && isWithinY) {
+                targetIndex = index
+                foundOverlapping = true
+            }
+        })
+
+        // If not directly over any skill, find the closest one
+        if (!foundOverlapping) {
+            let closestDistance = Number.POSITIVE_INFINITY
+
+            this.skillItems.forEach((item, index) => {
+                const itemRect = item.getBoundingClientRect()
+                const itemCenterX = itemRect.left + itemRect.width / 2
+                const itemCenterY = itemRect.top + itemRect.height / 2
+
+                const distance = Math.sqrt(
+                    Math.pow(cardCenterX - itemCenterX, 2) +
+                    Math.pow(cardCenterY - itemCenterY, 2)
+                )
+
+                if (distance < closestDistance) {
+                    closestDistance = distance
+                    targetIndex = index
+                }
+            })
+        }
+
+        this.currentTargetIndex = targetIndex
+        this.snapToSkill(targetIndex)
+    }
+
+    updateCardPosition() {
+        if (this.isDragging || this.isSnapping) return
+
+        const viewportCenter = window.innerHeight / 2
+        let closestIndex = 0
+        let closestDistance = Number.POSITIVE_INFINITY
+
+        // Find which skill item is closest to viewport center
+        this.skillItems.forEach((item, index) => {
+            const rect = item.getBoundingClientRect()
+            const itemCenter = rect.top
+            const distance = Math.abs(itemCenter - viewportCenter)
+
+            if (distance < closestDistance) {
+                closestDistance = distance
+                closestIndex = index
+            }
+        })
+
+        if (closestIndex !== this.currentTargetIndex) {
+            this.currentTargetIndex = closestIndex
+            this.snapToSkill(closestIndex)
+        }
+    }
+
+    snapToSkill(index) {
+        if (this.isDragging) return
+        this.isSnapping = true
+
+        const targetItem = this.skillItems[index]
+        const skillsContent = document.querySelector(".skills-content")
+
+        if (!targetItem || !skillsContent) return
+
+        // Calculate position relative to skills content container
+        const contentRect = skillsContent.getBoundingClientRect()
+        const itemRect = targetItem.getBoundingClientRect()
+
+        const contentCenterX = contentRect.left + contentRect.width / 2
+        const contentCenterY = contentRect.top + contentRect.height / 2
+
+        const itemCenterX = itemRect.left + itemRect.width / 2
+        const itemCenterY = itemRect.top + itemRect.height / 2
+
+        const targetX = itemCenterX - contentCenterX
+        const targetY = itemCenterY - contentCenterY
+
+        // Get current transform values
+        const currentTransform = gsap.getProperty(this.glassCard, "transform")
+        const matrix = new DOMMatrix(currentTransform)
+        const currentY = matrix.f // translateY value
+        const currentX = matrix.e // translateX value
+
+        // Calculate distance to travel
+        const distanceY = Math.abs(targetY - currentY)
+        const distanceX = Math.abs(targetX - currentX)
+        const totalDistance = Math.sqrt(distanceY * distanceY + distanceX * distanceX)
+
+        const baseDuration = 0.6
+        const maxDuration = 1.5
+        const distanceScale = totalDistance / 300
+        const duration = Math.min(maxDuration, baseDuration + distanceScale * 0.4)
+
+        gsap.to(this.glassCard, {
+            x: targetX,
+            y: targetY,
+            duration: duration,
+            ease: "power2.out",
+            onUpdate: () => {
+                this.updateBlurEffect()
+            },
+            onComplete: () => {
+                this.isSnapping = false
+            },
+        })
+    }
+
+    updateBlurEffect() {
+        const cardRect = this.glassCard.getBoundingClientRect()
+        const cardCenterX = cardRect.left + cardRect.width / 2
+        const cardCenterY = cardRect.top + cardRect.height / 2
+
+        this.skillItems.forEach((item, index) => {
+            const skillSub = item.querySelector(".skills-sub")
+            if (!skillSub) return
+
+            const itemRect = item.getBoundingClientRect()
+            const itemCenterX = itemRect.left + itemRect.width / 2
+            const itemCenterY = itemRect.top + itemRect.height / 2
+
+            const padding = 20
+            const isOverlappingX = cardCenterX >= itemRect.left - padding && cardCenterX <= itemRect.right + padding
+            const isOverlappingY = cardCenterY >= itemRect.top - padding && cardCenterY <= itemRect.bottom + padding
+            const isOverlapping = isOverlappingX && isOverlappingY
+
+            if (isOverlapping) {
+                skillSub.style.filter = "blur(0px)"
+                skillSub.style.transition = "filter 0.3s ease-out"
+            } else {
+                const distance = Math.sqrt(Math.pow(cardCenterX - itemCenterX, 2) + Math.pow(cardCenterY - itemCenterY, 2))
+
+                // Scale blur based on distance with better curve
+                const maxBlur = 3
+                const minBlur = 0
+                const blurRange = maxBlur - minBlur
+                const normalizedDistance = Math.min(1, distance / 200)
+                const blurAmount = minBlur + blurRange * normalizedDistance
+
+                skillSub.style.filter = `blur(${blurAmount}px)`
+                skillSub.style.transition = "filter 0.3s ease-out"
+            }
+        })
     }
 }
