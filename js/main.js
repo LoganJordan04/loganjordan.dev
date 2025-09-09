@@ -55,7 +55,7 @@ function initializeApp() {
     new HeaderManager();
     new HeaderColorManager();
     new SkipLinkManager();
-    
+
     new ScrollWords();
     new GlassCardSnap();
 
