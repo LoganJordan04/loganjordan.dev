@@ -621,4 +621,44 @@ body.loading-active .custom-scrollbar {
     position: relative;
 }
 
+#design-skillset {
+    opacity: 1;
+}
+
+#frontend-skillset {
+    opacity: 0;
+}
+
+#backend-skillset {
+    opacity: 0;
+}
+
+.skill-icons {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 1rem 3.125rem 1rem 0;
+}
+
+.skill-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+}
+
+.skill-icon {
+    height: 3.75rem;
+    width: auto;
+}
+
 /* endregion */
