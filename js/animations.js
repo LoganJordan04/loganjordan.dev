@@ -602,12 +602,19 @@ export class ScrollWords {
     }
 }
 
-// Manages draggable glass card UI that snaps to skill items
+// Manages draggable glass card UI
 export class GlassCardSnap {
     constructor() {
         this.glassCard = document.querySelector(".glass-card");
         this.skillItems = document.querySelectorAll(".skill-item");
         this.skillsContainer = document.getElementById("skills-container");
+
+        // Get all skillset elements
+        this.skillsets = {
+            design: document.getElementById("design-skillset"),
+            frontend: document.getElementById("frontend-skillset"),
+            backend: document.getElementById("backend-skillset"),
+        };
 
         // State management
         this.state = {
@@ -615,6 +622,7 @@ export class GlassCardSnap {
             isSnapping: false,
             currentTargetIndex: 0,
             dragOffset: { x: 0, y: 0 },
+            currentSkillset: "design", // Track current active skillset
         };
 
         // Animation frame tracking
@@ -635,6 +643,7 @@ export class GlassCardSnap {
         this.createScrollTrigger();
         this.updateBlurEffect();
         this.snapToSkill(0);
+        this.switchSkillset(0); // Initialize with first skillset
     }
 
     setupEventListeners() {
@@ -697,6 +706,18 @@ export class GlassCardSnap {
 
             gsap.set(this.glassCard, position);
             this.scheduleBlurUpdate();
+
+            // Check if card is outside container first
+            if (this.isCardOutsideContainer()) {
+                this.switchSkillset(null); // This will hide all skill sets
+            } else {
+                // Update skillset based on current position during drag
+                const cardCenter = this.getCardCenter();
+                const overlappingSkill = this.findOverlappingSkill(cardCenter);
+                if (overlappingSkill !== null) {
+                    this.switchSkillset(overlappingSkill);
+                }
+            }
         });
     }
 
@@ -773,6 +794,7 @@ export class GlassCardSnap {
 
         this.state.currentTargetIndex = targetIndex;
         this.snapToSkill(targetIndex);
+        this.switchSkillset(targetIndex);
     }
 
     findOverlappingSkill(cardCenter) {
@@ -841,6 +863,7 @@ export class GlassCardSnap {
         ) {
             this.state.currentTargetIndex = targetIndex;
             this.snapToSkill(targetIndex);
+            this.switchSkillset(targetIndex);
         }
     }
 
@@ -869,6 +892,87 @@ export class GlassCardSnap {
                 this.state.isSnapping = false;
             },
         });
+    }
+
+    isCardOutsideContainer() {
+        const cardCenter = this.getCardCenter();
+        const containerRect = this.skillsContainer.getBoundingClientRect();
+        const buffer = 50; // Add some buffer for smoother transitions
+
+        return (
+            cardCenter.x < containerRect.left - buffer ||
+            cardCenter.x > containerRect.right + buffer ||
+            cardCenter.y < containerRect.top - buffer ||
+            cardCenter.y > containerRect.bottom + buffer
+        );
+    }
+
+    switchSkillset(skillIndex) {
+        const skillsetNames = ["design", "frontend", "backend"];
+
+        // Check if card is outside container
+        if (this.isCardOutsideContainer()) {
+            // Hide all skill sets when outside container
+            Object.values(this.skillsets).forEach((element) => {
+                if (element) {
+                    gsap.killTweensOf(element);
+                    gsap.to(element, {
+                        opacity: 0,
+                        duration: 0.2,
+                        ease: "power2.out",
+                    });
+                }
+            });
+            this.state.currentSkillset = null;
+            return;
+        }
+
+        const targetSkillset = skillsetNames[skillIndex];
+
+        // Don't animate if already showing the correct skillset
+        if (this.state.currentSkillset === targetSkillset) return;
+
+        const targetElement = this.skillsets[targetSkillset];
+        if (!targetElement) return;
+
+        // Kill any existing animations to prevent conflicts
+        Object.values(this.skillsets).forEach((element) => {
+            if (element) {
+                gsap.killTweensOf(element);
+            }
+        });
+
+        // Create timeline for smooth transition with overlap
+        const timeline = gsap.timeline();
+
+        // First, fade out all non-target skill sets simultaneously
+        Object.entries(this.skillsets).forEach(([name, element]) => {
+            if (element && name !== targetSkillset) {
+                timeline.to(
+                    element,
+                    {
+                        opacity: 0,
+                        duration: 0.4,
+                        ease: "power2.out",
+                    },
+                    0
+                ); // All start at the same time
+            }
+        });
+
+        // Then fade in target skillset with overlap for smooth transition
+        timeline.to(
+            targetElement,
+            {
+                opacity: 1,
+                duration: 0.5,
+                ease: "power2.out",
+            },
+            "-=0.2"
+        ); // Start 0.2s before previous animations finish
+
+        // Update state
+        this.state.currentSkillset = targetSkillset;
     }
 
     calculateSnapDistance(targetPosition) {
