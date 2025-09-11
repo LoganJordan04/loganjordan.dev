@@ -259,7 +259,7 @@ body.loading-active .custom-scrollbar {
 
 .about-p {
     margin: 2rem 0 0 0;
-    width: min(75vw, 1150px);
+    width: min(75vw, 71.875rem);
     font-size: clamp(1rem, 2vw, 1.875rem);
     text-align: justify;
     word-break: keep-all;
@@ -280,7 +280,7 @@ body.loading-active .custom-scrollbar {
     margin: 0;
     padding-left: 3.125rem;
     width: 100%;
-    font-size: 5rem;
+    font-size: clamp(3.75rem, 7.9vw, 6.25rem);
     font-weight: 300;
     text-align: start;
     transition: filter 0.3s ease-out;
@@ -542,6 +542,7 @@ body.loading-active .custom-scrollbar {
     opacity: 0;
 }
 
+/* Skills */
 #skills-container {
     position: relative;
     top: 145vh;
@@ -550,8 +551,9 @@ body.loading-active .custom-scrollbar {
 }
 
 .skills-content {
+    margin: 1rem 0;
     position: relative;
-    width: min(82vw, 1000px);
+    width: min(82vw, 75rem);
     height: 80vh;
     display: flex;
     align-items: center;
@@ -574,7 +576,7 @@ body.loading-active .custom-scrollbar {
 .glass-card {
     position: relative;
     width: 100%;
-    height: 16.875rem;
+    height: clamp(16.875rem, 27vw, 19rem);
     border-radius: 16px;
     transition: transform 0.1s ease;
     --fx-filter: liquid-glass(2, 25, 0.2);
@@ -657,8 +659,69 @@ body.loading-active .custom-scrollbar {
 }
 
 .skill-icon {
-    height: 3.75rem;
+    height: clamp(3.125rem, 5.9vw, 4.375rem);
     width: auto;
+}
+
+/* endregion */
+
+/* region Media Queries */
+
+/* Tablet */
+@media screen and (max-width: 768px) {
+    .skills-sub {
+        padding: 0;
+        font-size: clamp(3.75rem, 7.9vw, 6.25rem);
+        text-align: center;
+    }
+
+    .skills-content {
+        height: 100vh;
+    }
+
+    .glass-card {
+        height: 21.875rem;
+    }
+
+    .skill-item {
+        align-items: start;
+    }
+
+    .skill-item:not(:first-child) {
+        margin-top: 2rem;
+    }
+
+    .skill-icons {
+        bottom: 0;
+        width: 100%;
+        height: 60%;
+        justify-content: start;
+        margin: auto 0 1rem 0;
+        padding: 0 15vw;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 480px) {
+    .skills-content {
+        height: 115vh;
+    }
+
+    .glass-card {
+        --fx-filter: none;
+    }
+    
+    .skill-row {
+        gap: 0;
+    }
+
+    .skill-icons {
+        height: 55%;
+    }
+    
+    .skill-icon {
+        height: 2.5rem;
+    }
 }
 
 /* endregion */
