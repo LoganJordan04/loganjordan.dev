@@ -601,3 +601,443 @@ export class ScrollWords {
         return shuffled.slice(0, count);
     }
 }
+
+// Manages draggable glass card UI
+export class GlassCardSnap {
+    constructor() {
+        this.glassCard = document.querySelector(".glass-card");
+        this.skillItems = document.querySelectorAll(".skill-item");
+        this.skillsContainer = document.getElementById("skills-container");
+
+        // Get all skillset elements
+        this.skillsets = {
+            design: document.getElementById("design-skillset"),
+            frontend: document.getElementById("frontend-skillset"),
+            backend: document.getElementById("backend-skillset"),
+        };
+
+        // State management
+        this.state = {
+            isDragging: false,
+            isSnapping: false,
+            currentTargetIndex: 0,
+            dragOffset: { x: 0, y: 0 },
+            currentSkillset: "design", // Track current active skillset
+        };
+
+        // Animation frame tracking
+        this.frames = {
+            drag: null,
+            blur: null,
+        };
+
+        this.scrollTrigger = null;
+
+        if (this.glassCard && this.skillItems.length && this.skillsContainer) {
+            this.init();
+        }
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.createScrollTrigger();
+        this.updateBlurEffect();
+        this.snapToSkill(0);
+        this.switchSkillset(0); // Initialize with first skillset
+    }
+
+    setupEventListeners() {
+        // Unified event handling
+        const events = [
+            { type: "mousedown", handler: this.handleStart },
+            {
+                type: "touchstart",
+                handler: this.handleStart,
+                options: { passive: false },
+            },
+            { type: "mousemove", handler: this.handleMove, target: document },
+            {
+                type: "touchmove",
+                handler: this.handleMove,
+                target: document,
+                options: { passive: false },
+            },
+            { type: "mouseup", handler: this.handleEnd, target: document },
+            { type: "touchend", handler: this.handleEnd, target: document },
+        ];
+
+        events.forEach(
+            ({ type, handler, target = this.glassCard, options }) => {
+                target.addEventListener(type, handler.bind(this), options);
+            }
+        );
+    }
+
+    handleStart(e) {
+        e.preventDefault();
+        this.state.isDragging = true;
+        this.glassCard.style.cursor = "grabbing";
+
+        this.cancelAnimations();
+        this.scrollTrigger?.disable();
+
+        const { clientX, clientY } = this.getEventCoords(e);
+        const cardCenter = this.getCardCenter();
+
+        this.state.dragOffset = {
+            x: clientX - cardCenter.x,
+            y: clientY - cardCenter.y,
+        };
+    }
+
+    handleMove(e) {
+        if (!this.state.isDragging) return;
+        e.preventDefault();
+
+        this.cancelFrame("drag");
+        this.frames.drag = requestAnimationFrame(() => {
+            const { clientX, clientY } = this.getEventCoords(e);
+            const contentCenter = this.getContentCenter();
+
+            const position = {
+                x: clientX - this.state.dragOffset.x - contentCenter.x,
+                y: clientY - this.state.dragOffset.y - contentCenter.y,
+            };
+
+            gsap.set(this.glassCard, position);
+            this.scheduleBlurUpdate();
+
+            // Check if card is outside container first
+            if (this.isCardOutsideContainer()) {
+                this.switchSkillset(null); // This will hide all skill sets
+            } else {
+                // Update skillset based on current position during drag
+                const cardCenter = this.getCardCenter();
+                const overlappingSkill = this.findOverlappingSkill(cardCenter);
+                if (overlappingSkill !== null) {
+                    this.switchSkillset(overlappingSkill);
+                }
+            }
+        });
+    }
+
+    handleEnd() {
+        if (!this.state.isDragging) return;
+
+        this.state.isDragging = false;
+        this.glassCard.style.cursor = "grab";
+        this.cancelAnimations();
+        this.findAndSnapToClosestSkill();
+        this.scrollTrigger?.enable();
+    }
+
+    // Utility methods
+    getEventCoords(e) {
+        return {
+            clientX: e.clientX || e.touches[0].clientX,
+            clientY: e.clientY || e.touches[0].clientY,
+        };
+    }
+
+    getCardCenter() {
+        const rect = this.glassCard.getBoundingClientRect();
+        return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+        };
+    }
+
+    getContentCenter() {
+        const skillsContent = document.querySelector(".skills-content");
+        const rect = skillsContent.getBoundingClientRect();
+        return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+        };
+    }
+
+    cancelFrame(type) {
+        if (this.frames[type]) {
+            cancelAnimationFrame(this.frames[type]);
+            this.frames[type] = null;
+        }
+    }
+
+    cancelAnimations() {
+        gsap.killTweensOf(this.glassCard);
+        Object.keys(this.frames).forEach((type) => this.cancelFrame(type));
+    }
+
+    scheduleBlurUpdate() {
+        this.cancelFrame("blur");
+        this.frames.blur = requestAnimationFrame(() => this.updateBlurEffect());
+    }
+
+    createScrollTrigger() {
+        this.scrollTrigger = ScrollTrigger.create({
+            trigger: this.skillsContainer,
+            start: "top 80%",
+            end: "bottom 20%",
+            onUpdate: () => {
+                if (!this.state.isDragging) {
+                    this.updateCardPosition();
+                }
+            },
+        });
+    }
+
+    findAndSnapToClosestSkill() {
+        const cardCenter = this.getCardCenter();
+        let targetIndex =
+            this.findOverlappingSkill(cardCenter) ??
+            this.findClosestSkill(cardCenter);
+
+        this.state.currentTargetIndex = targetIndex;
+        this.snapToSkill(targetIndex);
+        this.switchSkillset(targetIndex);
+    }
+
+    findOverlappingSkill(cardCenter) {
+        for (let i = 0; i < this.skillItems.length; i++) {
+            const rect = this.skillItems[i].getBoundingClientRect();
+
+            if (
+                cardCenter.x >= rect.left &&
+                cardCenter.x <= rect.right &&
+                cardCenter.y >= rect.top &&
+                cardCenter.y <= rect.bottom
+            ) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    findClosestSkill(cardCenter) {
+        let closestIndex = 0;
+        let closestDistance = Infinity;
+
+        this.skillItems.forEach((item, index) => {
+            const rect = item.getBoundingClientRect();
+            const itemCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+            };
+
+            const distance = Math.sqrt(
+                Math.pow(cardCenter.x - itemCenter.x, 2) +
+                    Math.pow(cardCenter.y - itemCenter.y, 2)
+            );
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = index;
+            }
+        });
+
+        return closestIndex;
+    }
+
+    updateCardPosition() {
+        if (this.state.isDragging || this.state.isSnapping) return;
+
+        const viewportCenter = window.innerHeight / 2;
+        let targetIndex = null;
+
+        // Find which skill is currently at the vertical center of the screen
+        this.skillItems.forEach((item, index) => {
+            const rect = item.getBoundingClientRect();
+            const itemTop = rect.top;
+            const itemBottom = rect.bottom;
+
+            // Check if the viewport center line intersects with this skill item
+            if (viewportCenter >= itemTop && viewportCenter <= itemBottom) {
+                targetIndex = index;
+            }
+        });
+
+        // Only update if a skill is actually at the center
+        if (
+            targetIndex !== null &&
+            targetIndex !== this.state.currentTargetIndex
+        ) {
+            this.state.currentTargetIndex = targetIndex;
+            this.snapToSkill(targetIndex);
+            this.switchSkillset(targetIndex);
+        }
+    }
+
+    snapToSkill(index) {
+        if (this.state.isDragging) return;
+        this.state.isSnapping = true;
+
+        const targetItem = this.skillItems[index];
+        const contentCenter = this.getContentCenter();
+        const targetRect = targetItem.getBoundingClientRect();
+
+        const targetPosition = {
+            x: targetRect.left + targetRect.width / 2 - contentCenter.x,
+            y: targetRect.top + targetRect.height / 2 - contentCenter.y,
+        };
+
+        const distance = this.calculateSnapDistance(targetPosition);
+        const duration = this.calculateSnapDuration(distance);
+
+        gsap.to(this.glassCard, {
+            ...targetPosition,
+            duration,
+            ease: "power2.out",
+            onUpdate: () => this.updateBlurEffect(),
+            onComplete: () => {
+                this.state.isSnapping = false;
+            },
+        });
+    }
+
+    isCardOutsideContainer() {
+        const cardCenter = this.getCardCenter();
+        const containerRect = this.skillsContainer.getBoundingClientRect();
+        const buffer = 50; // Add some buffer for smoother transitions
+
+        return (
+            cardCenter.x < containerRect.left - buffer ||
+            cardCenter.x > containerRect.right + buffer ||
+            cardCenter.y < containerRect.top - buffer ||
+            cardCenter.y > containerRect.bottom + buffer
+        );
+    }
+
+    switchSkillset(skillIndex) {
+        const skillsetNames = ["design", "frontend", "backend"];
+
+        // Check if card is outside container
+        if (this.isCardOutsideContainer()) {
+            // Hide all skill sets when outside container
+            Object.values(this.skillsets).forEach((element) => {
+                if (element) {
+                    gsap.killTweensOf(element);
+                    gsap.to(element, {
+                        opacity: 0,
+                        duration: 0.2,
+                        ease: "power2.out",
+                    });
+                }
+            });
+            this.state.currentSkillset = null;
+            return;
+        }
+
+        const targetSkillset = skillsetNames[skillIndex];
+
+        // Don't animate if already showing the correct skillset
+        if (this.state.currentSkillset === targetSkillset) return;
+
+        const targetElement = this.skillsets[targetSkillset];
+        if (!targetElement) return;
+
+        // Kill any existing animations to prevent conflicts
+        Object.values(this.skillsets).forEach((element) => {
+            if (element) {
+                gsap.killTweensOf(element);
+            }
+        });
+
+        // Create timeline for smooth transition with overlap
+        const timeline = gsap.timeline();
+
+        // First, fade out all non-target skill sets simultaneously
+        Object.entries(this.skillsets).forEach(([name, element]) => {
+            if (element && name !== targetSkillset) {
+                timeline.to(
+                    element,
+                    {
+                        opacity: 0,
+                        duration: 0.4,
+                        ease: "power2.out",
+                    },
+                    0
+                ); // All start at the same time
+            }
+        });
+
+        // Then fade in target skillset with overlap for smooth transition
+        timeline.to(
+            targetElement,
+            {
+                opacity: 1,
+                duration: 0.5,
+                ease: "power2.out",
+            },
+            "-=0.2"
+        ); // Start 0.2s before previous animations finish
+
+        // Update state
+        this.state.currentSkillset = targetSkillset;
+    }
+
+    calculateSnapDistance(targetPosition) {
+        const currentTransform = gsap.getProperty(this.glassCard, "transform");
+        const matrix = new DOMMatrix(currentTransform);
+        const current = { x: matrix.e, y: matrix.f };
+
+        return Math.sqrt(
+            Math.pow(targetPosition.x - current.x, 2) +
+                Math.pow(targetPosition.y - current.y, 2)
+        );
+    }
+
+    calculateSnapDuration(distance) {
+        const baseDuration = 0.6;
+        const maxDuration = 1.5;
+        const distanceScale = distance / 300;
+        return Math.min(maxDuration, baseDuration + distanceScale * 0.4);
+    }
+
+    updateBlurEffect() {
+        const cardCenter = this.getCardCenter();
+        const padding = 20;
+
+        this.skillItems.forEach((item) => {
+            const skillSub = item.querySelector(".skills-sub");
+            if (!skillSub) return;
+
+            const itemRect = item.getBoundingClientRect();
+            const isOverlapping = this.isCardOverlappingItem(
+                cardCenter,
+                itemRect,
+                padding
+            );
+
+            if (isOverlapping) {
+                skillSub.style.filter = "blur(0px)";
+            } else {
+                const blur = this.calculateBlurAmount(cardCenter, itemRect);
+                skillSub.style.filter = `blur(${blur}px)`;
+            }
+        });
+    }
+
+    isCardOverlappingItem(cardCenter, itemRect, padding) {
+        return (
+            cardCenter.x >= itemRect.left - padding &&
+            cardCenter.x <= itemRect.right + padding &&
+            cardCenter.y >= itemRect.top - padding &&
+            cardCenter.y <= itemRect.bottom + padding
+        );
+    }
+
+    calculateBlurAmount(cardCenter, itemRect) {
+        const itemCenter = {
+            x: itemRect.left + itemRect.width / 2,
+            y: itemRect.top + itemRect.height / 2,
+        };
+
+        const distance = Math.sqrt(
+            Math.pow(cardCenter.x - itemCenter.x, 2) +
+                Math.pow(cardCenter.y - itemCenter.y, 2)
+        );
+
+        const normalizedDistance = Math.min(1, distance / 200);
+        return normalizedDistance * 3; // maxBlur = 3
+    }
+}
