@@ -710,7 +710,7 @@ body.loading-active .custom-scrollbar {
     .glass-card {
         --fx-filter: none;
     }
-    
+
     .skill-row {
         gap: 0;
     }
@@ -718,7 +718,7 @@ body.loading-active .custom-scrollbar {
     .skill-icons {
         height: 55%;
     }
-    
+
     .skill-icon {
         height: 2.5rem;
     }
