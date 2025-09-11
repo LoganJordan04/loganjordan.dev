@@ -65,6 +65,27 @@ function initializeApp() {
 
     // Make smoother globally accessible for other components
     window.scrollSmoother = smoother;
+
+    // Development popup functionality
+    function closeDevPopup() {
+        const popup = document.getElementById('devPopup');
+        if (popup) {
+            document.body.classList.remove('dev-popup-active');
+            popup.classList.add('hidden');
+
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                }
+            }, 300);
+        }
+    }
+
+    // Make function globally accessible
+    window.closeDevPopup = closeDevPopup;
+
+    // Show popup on load
+    document.body.classList.add('dev-popup-active');
 }
 
 // Prevent browser from restoring scroll position

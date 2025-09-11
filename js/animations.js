@@ -608,6 +608,8 @@ export class GlassCardSnap {
         this.glassCard = document.querySelector(".glass-card");
         this.skillItems = document.querySelectorAll(".skill-item");
         this.skillsContainer = document.getElementById("skills-container");
+        
+        this.isTouchDevice = "ontouchstart" in document.documentElement;
 
         // Get all skillset elements
         this.skillsets = {
@@ -639,11 +641,19 @@ export class GlassCardSnap {
     }
 
     init() {
-        this.setupEventListeners();
+        // Only setup drag events if not a touch device
+        if (!this.isTouchDevice) {
+            this.setupEventListeners();
+            this.glassCard.style.cursor = "grab";
+        } else {
+            this.glassCard.style.cursor = "default";
+            this.glassCard.style.pointerEvents = "none";
+        }
+
         this.createScrollTrigger();
         this.updateBlurEffect();
         this.snapToSkill(0);
-        this.switchSkillset(0); // Initialize with first skillset
+        this.switchSkillset(0);
     }
 
     setupEventListeners() {
