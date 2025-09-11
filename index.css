@@ -299,7 +299,7 @@ body.loading-active .custom-scrollbar {
 }
 
 #header.header-auto-hide {
-    transition: opacity 0.5s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 #header.header-auto-hide.header-hidden {
@@ -669,6 +669,15 @@ body.loading-active .custom-scrollbar {
 
 /* Touchscreen adjustments */
 @media (pointer: coarse) {
+    #header.header-auto-hide {
+        will-change: opacity, transform;
+    }
+
+    #header.header-auto-hide.header-hidden {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    
     .glass-card {
         cursor: default !important;
         pointer-events: none;

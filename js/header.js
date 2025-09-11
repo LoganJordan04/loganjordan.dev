@@ -272,6 +272,8 @@ export class HeaderManager {
         this.scrollDirection = "up";
         this.ticking = false;
         this.navClickHide = false; // Track if header was hidden by nav click
+        this.isMobile = 'ontouchstart' in document.documentElement;
+        this.mobileScrollTimeout = null;
 
         this.init();
     }
@@ -356,9 +358,17 @@ export class HeaderManager {
     }
 
     handleScroll() {
-        if (!this.ticking) {
-            requestAnimationFrame(this.updateHeader.bind(this));
-            this.ticking = true;
+        if (this.isMobile) {
+            // For mobile, use a shorter timeout to ensure smoother transitions
+            clearTimeout(this.mobileScrollTimeout);
+            this.mobileScrollTimeout = setTimeout(() => {
+                this.updateHeader();
+            }, 16); // ~60fps
+        } else {
+            if (!this.ticking) {
+                requestAnimationFrame(this.updateHeader.bind(this));
+                this.ticking = true;
+            }
         }
     }
 
@@ -428,6 +438,9 @@ export class HeaderManager {
     showHeader() {
         if (!this.isHeaderVisible) {
             this.header.classList.remove("header-hidden");
+            if (this.isMobile) {
+                this.header.style.transform = "translateY(0)";
+            }
             this.isHeaderVisible = true;
         }
     }
@@ -435,6 +448,9 @@ export class HeaderManager {
     hideHeader() {
         if (this.isHeaderVisible) {
             this.header.classList.add("header-hidden");
+            if (this.isMobile) {
+                this.header.style.transform = "translateY(-100%)";
+            }
             this.isHeaderVisible = false;
         }
     }
