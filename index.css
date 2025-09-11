@@ -623,18 +623,6 @@ body.loading-active .custom-scrollbar {
     position: relative;
 }
 
-#design-skillset {
-    opacity: 1;
-}
-
-#frontend-skillset {
-    opacity: 0;
-}
-
-#backend-skillset {
-    opacity: 0;
-}
-
 .skill-icons {
     position: absolute;
     top: 0;
@@ -648,6 +636,18 @@ body.loading-active .custom-scrollbar {
     justify-content: center;
     margin-left: auto;
     padding: 1rem 3.125rem 1rem 0;
+}
+
+#design-skillset {
+    opacity: 1;
+}
+
+#frontend-skillset {
+    opacity: 0;
+}
+
+#backend-skillset {
+    opacity: 0;
 }
 
 .skill-row {

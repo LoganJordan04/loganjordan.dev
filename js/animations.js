@@ -886,7 +886,7 @@ export class GlassCardSnap {
         gsap.to(this.glassCard, {
             ...targetPosition,
             duration,
-            ease: "power2.out",
+            ease: "power1.out",
             onUpdate: () => this.updateBlurEffect(),
             onComplete: () => {
                 this.state.isSnapping = false;
@@ -919,7 +919,7 @@ export class GlassCardSnap {
                     gsap.to(element, {
                         opacity: 0,
                         duration: 0.2,
-                        ease: "power2.out",
+                        ease: "power1.out",
                     });
                 }
             });
@@ -953,7 +953,7 @@ export class GlassCardSnap {
                     {
                         opacity: 0,
                         duration: 0.4,
-                        ease: "power2.out",
+                        ease: "power1.out",
                     },
                     0
                 ); // All start at the same time
@@ -966,7 +966,7 @@ export class GlassCardSnap {
             {
                 opacity: 1,
                 duration: 0.5,
-                ease: "power2.out",
+                ease: "power1.out",
             },
             "-=0.2"
         ); // Start 0.2s before previous animations finish

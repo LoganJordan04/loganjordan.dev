@@ -57,7 +57,11 @@ function initializeApp() {
     new SkipLinkManager();
 
     new ScrollWords();
-    new GlassCardSnap();
+    
+    // Add delay to ensure DOM is fully ready
+    setTimeout(() => {
+        new GlassCardSnap();
+    }, 100);
 
     // Make smoother globally accessible for other components
     window.scrollSmoother = smoother;
