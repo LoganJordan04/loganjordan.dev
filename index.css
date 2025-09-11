@@ -667,6 +667,18 @@ body.loading-active .custom-scrollbar {
 
 /* region Media Queries */
 
+/* Touchscreen adjustments */
+@media (pointer: coarse) {
+    .glass-card {
+        cursor: default !important;
+        pointer-events: none;
+    }
+
+    .skills-sub {
+        transition: filter 0.3s ease-out, opacity 0.3s ease-out;
+    }
+}
+
 /* Tablet */
 @media screen and (max-width: 768px) {
     .skills-sub {
@@ -705,10 +717,6 @@ body.loading-active .custom-scrollbar {
 @media screen and (max-width: 480px) {
     .skills-content {
         height: 115vh;
-    }
-
-    .glass-card {
-        --fx-filter: none;
     }
 
     .skill-row {
