@@ -253,7 +253,7 @@ body.loading-active .custom-scrollbar {
 .about-header {
     margin: 0;
     width: 90vw;
-    font-size: clamp(4.375rem, 7.9vw, 7.5rem);
+    font-size: clamp(3.75rem, 6.8vw, 6.25rem);
     text-align: center;
 }
 
