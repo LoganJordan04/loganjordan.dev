@@ -260,7 +260,7 @@ body.loading-active .custom-scrollbar {
 .about-p {
     margin: 2rem 0 0 0;
     width: min(75vw, 71.875rem);
-    font-size: clamp(1rem, 2vw, 1.875rem);
+    font-size: clamp(1rem, 2vw, 1.625rem);
     text-align: justify;
     word-break: keep-all;
 }
