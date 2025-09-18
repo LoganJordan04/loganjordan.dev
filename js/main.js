@@ -22,56 +22,105 @@ function initializeApp() {
         smoothTouch: 0.1,
         normalizeScroll: true,
         ignoreMobileResize: true,
+        // Performance optimizations
+        onUpdate: (self) => {
+            // Throttle expensive operations during smooth scrolling
+            if (self.getVelocity() > 100) {
+                // Reduce quality during fast scrolling
+                document.documentElement.style.setProperty(
+                    "--scroll-quality",
+                    "optimizeSpeed"
+                );
+            } else {
+                document.documentElement.style.setProperty(
+                    "--scroll-quality",
+                    "optimizeQuality"
+                );
+            }
+        },
     });
 
-    new LoadingManager();
+    // Initialize components with error handling
+    try {
+        new LoadingManager();
 
-    // Initialize Hero Three.js container
-    const heroThreeContainer = document.getElementById("hero-three-container");
-    if (heroThreeContainer) {
-        new Sketch({
-            dom: heroThreeContainer,
-            section: "hero",
-            geometryWidth: 4,
-            geometryHeight: 2,
-        });
+        // Initialize Three.js containers with intersection observer
+        initThreeJsContainers();
+
+        new CustomScrollbar();
+        new NavManager();
+        new HeaderManager();
+        new HeaderColorManager();
+        new SkipLinkManager();
+
+        // Initialize animations with staggered loading
+        setTimeout(() => new ScrollWords(), 50);
+        setTimeout(() => new GlassCardSnap(), 150);
+
+        // Make smoother globally accessible
+        window.scrollSmoother = smoother;
+    } catch (error) {
+        console.error("Error during initialization:", error);
     }
 
-    // Initialize About Three.js container
-    const aboutThreeContainer = document.getElementById(
-        "about-three-container"
-    );
-    if (aboutThreeContainer) {
-        window.aboutSketch = new Sketch({
-            dom: aboutThreeContainer,
-            section: "about",
-            geometryWidth: 8,
-            geometryHeight: 2,
-        });
+    // Lazy load Three.js containers
+    function initThreeJsContainers() {
+        const heroContainer = document.getElementById("hero-three-container");
+        const aboutContainer = document.getElementById("about-three-container");
+
+        // Use Intersection Observer for lazy loading
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const { target } = entry;
+
+                        if (
+                            target.id === "hero-three-container" &&
+                            !target.dataset.initialized
+                        ) {
+                            new Sketch({
+                                dom: target,
+                                section: "hero",
+                                geometryWidth: 4,
+                                geometryHeight: 2,
+                            });
+                            target.dataset.initialized = "true";
+                        }
+
+                        if (
+                            target.id === "about-three-container" &&
+                            !target.dataset.initialized
+                        ) {
+                            window.aboutSketch = new Sketch({
+                                dom: target,
+                                section: "about",
+                                geometryWidth: 8,
+                                geometryHeight: 2,
+                            });
+                            target.dataset.initialized = "true";
+                        }
+
+                        observer.unobserve(target);
+                    }
+                });
+            },
+            { rootMargin: "50px" }
+        );
+
+        if (heroContainer) observer.observe(heroContainer);
+        if (aboutContainer) observer.observe(aboutContainer);
     }
-
-    new CustomScrollbar();
-    new NavManager();
-    new HeaderManager();
-    new HeaderColorManager();
-    new SkipLinkManager();
-
-    new ScrollWords();
-    
-    // Add delay to ensure DOM is fully ready
-    setTimeout(() => {
-        new GlassCardSnap();
-    }, 100);
 
     // Make smoother globally accessible for other components
     window.scrollSmoother = smoother;
 
     // Development popup functionality
     function closeDevPopup() {
-        const popup = document.getElementById('devPopup');
+        const popup = document.getElementById("devPopup");
         if (popup) {
-            document.body.classList.remove('dev-popup-active');
-            popup.classList.add('hidden');
+            document.body.classList.remove("dev-popup-active");
+            popup.classList.add("hidden");
 
             setTimeout(() => {
                 if (popup.parentNode) {
@@ -85,7 +134,7 @@ function initializeApp() {
     window.closeDevPopup = closeDevPopup;
 
     // Show popup on load
-    document.body.classList.add('dev-popup-active');
+    document.body.classList.add("dev-popup-active");
 }
 
 // Prevent browser from restoring scroll position

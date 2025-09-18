@@ -1,33 +1,23 @@
 class FxFilter {
-    static elements = new WeakMap(); // Track elements and their state
-    static filters = new Map(); // Registry for custom filters
-    static filterOptions = new Map(); // Track filter options including updatesOn
+    static elements = new WeakMap();
+    static filters = new Map();
+    static filterOptions = new Map();
     static running = false;
 
     static add(options) {
-        // Support both old (name, callback) and new (options) format
         if (typeof options === "string") {
-            // Old format: add(name, callback)
             const name = arguments[0];
             const callback = arguments[1];
             this.filters.set(name, callback);
             this.filterOptions.set(name, { name, callback, updatesOn: [] });
-            // console.log(`🔧 Registered filter: "${name}"`);
         } else {
-            // New format: add({name, callback, updatesOn})
             const { name, callback, updatesOn = [] } = options;
             this.filters.set(name, callback);
             this.filterOptions.set(name, { name, callback, updatesOn });
-            // console.log(
-            //     `🔧 Registered filter: "${name}" with updatesOn: [${updatesOn.join(", ")}]`
-            // );
         }
     }
 
     static init() {
-        // console.log("🔄 FxFilter.init() called");
-
-        // Register --fx-filter as a proper CSS custom property
         if ("CSS" in window && "registerProperty" in CSS) {
             try {
                 CSS.registerProperty({
@@ -36,22 +26,16 @@ class FxFilter {
                     inherits: false,
                     initialValue: "",
                 });
-                // console.log("✅ --fx-filter property registered");
             } catch (e) {
                 console.log(
-                    "⚠️ CSS registerProperty not supported or already registered"
+                    "CSS registerProperty not supported or already registered"
                 );
             }
         }
 
         if (!this.running) {
-            // console.log("🚀 Starting FxFilter animation loop");
             this.running = true;
             this.tick();
-        } else {
-            // console.log(
-            //     "⚡ FxFilter already running - skipping duplicate initialization"
-            // );
         }
     }
 
@@ -61,7 +45,6 @@ class FxFilter {
     }
 
     static scanElements() {
-        // Scan only elements that could have --fx-filter (not our generated containers)
         document
             .querySelectorAll("*:not(.fx-container):not(svg)")
             .forEach((element) => {
@@ -69,7 +52,6 @@ class FxFilter {
                 const storedState = this.elements.get(element);
 
                 if (fxFilter) {
-                    // Use cached parsedFilter if filter value hasn't changed
                     let parsedFilter;
                     if (
                         storedState &&
@@ -81,16 +63,13 @@ class FxFilter {
                         parsedFilter = this.parseFilterValue(fxFilter);
                     }
 
-                    // Get current styles for updatesOn tracking
                     const currentStyles = this.getTrackedStyles(
                         element,
                         fxFilter,
                         parsedFilter
                     );
 
-                    // Element has --fx-filter
                     if (!storedState) {
-                        // New element with fx-filter
                         this.addFxContainer(element, fxFilter, parsedFilter);
                         this.elements.set(element, {
                             filter: fxFilter,
@@ -105,7 +84,6 @@ class FxFilter {
                             currentStyles
                         )
                     ) {
-                        // Filter value changed OR tracked styles changed - remove old and add new
                         this.removeFxContainer(element);
                         this.addFxContainer(element, fxFilter, parsedFilter);
                         this.elements.set(element, {
@@ -115,9 +93,7 @@ class FxFilter {
                             parsedFilter: parsedFilter,
                         });
                     }
-                    // If storedState exists and filter is same and styles unchanged, do nothing
                 } else {
-                    // Element doesn't have --fx-filter
                     if (storedState && storedState.hasContainer) {
                         this.removeFxContainer(element);
                         this.elements.delete(element);
@@ -132,17 +108,13 @@ class FxFilter {
     }
 
     static addFxContainer(element, filterValue, parsedFilter) {
-        // Skip if element already has fx-container
         if (element.querySelector(".fx-container")) {
             return;
         }
 
-        // Parse filter value (use cached if provided)
         const { orderedFilters, customFilters } =
             parsedFilter || this.parseFilterValue(filterValue);
-        // console.log("Parsed filters:", { orderedFilters, customFilters });
 
-        // Build the combined filter list
         const filterParts = [];
         let svgContent = "";
 
@@ -155,25 +127,20 @@ class FxFilter {
                     const filterId = `fx-${filter.name}-${Math.random().toString(36).substr(2, 6)}`;
                     const filterContent = callback(element, ...filter.params);
 
-                    // Add SVG filter definition
                     svgContent += `<filter id="${filterId}"
                      x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"
                      >${filterContent}</filter>`;
 
-                    // Add to filter parts
                     filterParts.push(`url(#${filterId})`);
                 }
             } else if (item.type === "css") {
-                // Add CSS filter directly
                 filterParts.push(item.filter);
             }
         });
 
-        // Create the combined backdrop-filter value
         const backdropFilter = filterParts.join(" ");
 
         if (backdropFilter.trim()) {
-            // Create the structure
             element.innerHTML += `
                 <svg style="position: absolute; width: 0; height: 0;">
                     ${svgContent}
@@ -181,13 +148,10 @@ class FxFilter {
                 <div class="fx-container" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; backdrop-filter: ${backdropFilter}; background: transparent; pointer-events: none; z-index: -1; overflow: hidden; border-radius: inherit;"></div>
             `;
 
-            // console.log("Applied combined filter:", backdropFilter);
             this.elements.set(element, {
                 filter: filterValue,
                 hasContainer: true,
             });
-        } else {
-            console.log("No valid filters found");
         }
     }
 
@@ -236,15 +200,8 @@ class FxFilter {
     }
 
     static parseFilterValue(filterValue) {
-        // Parse: saturate(2) frosted-glass(8, 0.15) blur(10px)
-        // Return: { orderedFilters: [...], customFilters: [...] }
-
-        // console.log("🔍 Parsing filter value:", filterValue);
-
-        const orderedFilters = []; // Maintains original order
+        const orderedFilters = [];
         const customFilters = [];
-
-        // Regular expression to match filter functions with their parameters
         const filterRegex = /(\w+(?:-\w+)*)\s*\(([^)]*)\)/g;
 
         let match;
@@ -252,15 +209,7 @@ class FxFilter {
             const filterName = match[1];
             const params = match[2];
 
-            // console.log(
-            //     `📝 Found filter: ${filterName} with params: "${params}"`
-            // );
-
             if (this.filters.has(filterName)) {
-                // console.log(
-                //     `✅ Custom filter "${filterName}" found in registry`
-                // );
-                // It's a registered custom filter
                 let paramArray = [];
                 if (params.trim() !== "") {
                     paramArray = params
@@ -273,16 +222,10 @@ class FxFilter {
                         })
                         .filter((p) => p !== undefined);
                 }
-                // console.log(
-                //     `📋 Parsed params for "${filterName}":`,
-                //     paramArray
-                // );
                 const customFilter = { name: filterName, params: paramArray };
                 customFilters.push(customFilter);
                 orderedFilters.push({ type: "custom", filter: customFilter });
             } else {
-                // console.log(`🎨 CSS filter: ${filterName}(${params})`);
-                // It's a native CSS filter
                 orderedFilters.push({
                     type: "css",
                     filter: `${filterName}(${params})`,
@@ -290,11 +233,7 @@ class FxFilter {
             }
         }
 
-        // console.log("📊 Parse results:", { orderedFilters, customFilters });
-        return {
-            orderedFilters: orderedFilters,
-            customFilters: customFilters,
-        };
+        return { orderedFilters, customFilters };
     }
 
     static getTrackedStyles(element, filterValue, parsedFilter) {
@@ -322,9 +261,6 @@ class FxFilter {
 
         for (const [prop, value] of newStyles) {
             if (oldStyles.get(prop) !== value) {
-                // console.log(
-                //     `🔄 Style change detected: ${prop} changed from "${oldStyles.get(prop)}" to "${value}"`
-                // );
                 return true;
             }
         }
@@ -332,52 +268,6 @@ class FxFilter {
         return false;
     }
 }
-
-// FxFilter.add({
-//     name: "noise",
-//     callback: (element, saturation = 0, intensity = 1, opacity = 0.25) => {
-//         // Create canvas for noise texture
-//         const canvas = document.createElement("canvas");
-//         canvas.width = element.clientWidth;
-//         canvas.height = element.clientHeight;
-//         const ctx = canvas.getContext("2d");
-//
-//         // Disable smoothing for sharper noise
-//         ctx.imageSmoothingEnabled = false;
-//
-//         // Generate additive noise pattern (bright)
-//         const imageDataAdd = ctx.createImageData(canvas.width, canvas.height);
-//         const dataAdd = imageDataAdd.data;
-//         const additiveIntensity = intensity;
-//
-//         for (let i = 0; i < dataAdd.length; i += 4) {
-//             // Generate smooth random values between 0-1 for more unified noise
-//             const noiseValue1 = Math.random() * additiveIntensity * 255;
-//             const noiseValue2 = Math.random() * additiveIntensity * 255;
-//             const noiseValue3 = Math.random() * additiveIntensity * 255;
-//
-//             // For saturation=0: use same value for all channels (grayscale)
-//             // For saturation=1: use different values for each channel (color)
-//             const baseNoise = noiseValue1; // Use first noise value as base for grayscale
-//             dataAdd[i] =
-//                 baseNoise * (1 - saturation) + noiseValue1 * saturation; // Red
-//             dataAdd[i + 1] =
-//                 baseNoise * (1 - saturation) + noiseValue2 * saturation; // Green
-//             dataAdd[i + 2] =
-//                 baseNoise * (1 - saturation) + noiseValue3 * saturation; // Blue
-//             dataAdd[i + 3] = 255 * opacity; // Full opacity for unified appearance
-//         }
-//
-//         ctx.putImageData(imageDataAdd, 0, 0);
-//         const noiseAdditiveURL = canvas.toDataURL();
-//
-//         return `
-//                 <feImage href="${noiseAdditiveURL}" result="noiseAdd" image-rendering="pixelated"/>
-//                 <feBlend in="SourceGraphic" in2="noiseAdd" mode="overlay" image-rendering="pixelated" result="brightened"/>
-//                 `;
-//     },
-//     updatesOn: ["width", "height"], // No style dependencies for noise filter
-// });
 
 FxFilter.add({
     name: "liquid-glass",
@@ -389,110 +279,81 @@ FxFilter.add({
         const chromaticValue = parseFloat(chromatic) || 0;
         const borderRadiusStr =
             window.getComputedStyle(element).borderRadius || "0";
-        let borderRadius = 0;
 
+        // Cache results per element and params
+        if (!FxFilter._cache) FxFilter._cache = new WeakMap();
+        const key = `${width}x${height}-${refractionValue}-${offsetValue}-${chromaticValue}-${borderRadiusStr}`;
+        const elemCache = FxFilter._cache.get(element) || {};
+        if (elemCache.key === key) return elemCache.result;
+
+        let borderRadius = 0;
         if (borderRadiusStr.includes("%")) {
-            // Handle percentage border radius
             const percentage = parseFloat(borderRadiusStr);
-            const elementSize = Math.min(
-                element.offsetWidth,
-                element.offsetHeight
-            );
-            borderRadius = (percentage / 100) * elementSize;
+            borderRadius = (percentage / 100) * Math.min(width, height);
         } else {
-            // Handle pixel values
             borderRadius = parseFloat(borderRadiusStr);
         }
 
-        // Helper function to create displacement map with given refraction
+        const maxDimension = Math.ceil(Math.max(width, height));
+
         function createDisplacementMap(refractionMod) {
             const adjustedRefraction = refractionValue + refractionMod;
             const imageData = new ImageData(maxDimension, maxDimension);
             const data = imageData.data;
 
-            // Initialize with neutral gray (127 = no displacement)
+            // Neutral gray
             for (let i = 0; i < data.length; i += 4) {
-                data[i] = 127; // R - X displacement channel
-                data[i + 1] = 127; // G - unused channel
-                data[i + 2] = 127; // B - Y displacement channel
-                data[i + 3] = 255; // A
+                data[i] = 127;
+                data[i + 1] = 127;
+                data[i + 2] = 127;
+                data[i + 3] = 255;
             }
 
-            // Apply top edge displacement
-            const topOffset = Math.floor(maxDimension / 2);
-            for (let y = 0; y < topOffset; y++) {
+            const half = Math.floor(maxDimension / 2);
+
+            // Top / bottom
+            for (let y = 0; y < half; y++) {
                 for (let x = 0; x < maxDimension; x++) {
-                    const gradientSegment = (topOffset - y) / topOffset; // bottom to top
-                    const pixelIndex = (y * maxDimension + x) * 4;
-                    const vyValue = 1 * adjustedRefraction;
-                    data[pixelIndex + 2] = Math.max(
+                    const grad = (half - y) / half;
+                    const idxTop = (y * maxDimension + x) * 4;
+                    const idxBottom =
+                        ((maxDimension - 1 - y) * maxDimension + x) * 4;
+                    data[idxTop + 2] = Math.max(
                         0,
                         Math.min(
                             255,
-                            Math.round(
-                                127 +
-                                    127 * vyValue * Math.pow(gradientSegment, 1)
-                            )
+                            Math.round(127 + 127 * adjustedRefraction * grad)
+                        )
+                    );
+                    data[idxBottom + 2] = Math.max(
+                        0,
+                        Math.min(
+                            255,
+                            Math.round(127 - 127 * adjustedRefraction * grad)
                         )
                     );
                 }
             }
 
-            // Apply bottom edge displacement
-            for (let y = maxDimension - topOffset; y < maxDimension; y++) {
-                for (let x = 0; x < maxDimension; x++) {
-                    const gradientSegment =
-                        (y - (maxDimension - topOffset)) / topOffset; // top to bottom
-                    const pixelIndex = (y * maxDimension + x) * 4;
-                    const vyValue = -1 * adjustedRefraction;
-                    data[pixelIndex + 2] = Math.max(
+            // Left / right
+            for (let x = 0; x < half; x++) {
+                for (let y = 0; y < maxDimension; y++) {
+                    const grad = (half - x) / half;
+                    const idxLeft = (y * maxDimension + x) * 4;
+                    const idxRight =
+                        (y * maxDimension + (maxDimension - 1 - x)) * 4;
+                    data[idxLeft] = Math.max(
                         0,
                         Math.min(
                             255,
-                            Math.round(
-                                127 +
-                                    127 * vyValue * Math.pow(gradientSegment, 1)
-                            )
+                            Math.round(127 + 127 * adjustedRefraction * grad)
                         )
                     );
-                }
-            }
-
-            // Apply left edge displacement
-            const leftOffset = Math.floor(maxDimension / 2);
-            for (let y = 0; y < maxDimension; y++) {
-                for (let x = 0; x < leftOffset; x++) {
-                    const gradientSegment = (leftOffset - x) / leftOffset; // right to left
-                    const pixelIndex = (y * maxDimension + x) * 4;
-                    const vxValue = 1 * adjustedRefraction;
-                    data[pixelIndex] = Math.max(
+                    data[idxRight] = Math.max(
                         0,
                         Math.min(
                             255,
-                            Math.round(
-                                127 +
-                                    127 * vxValue * Math.pow(gradientSegment, 1)
-                            )
-                        )
-                    );
-                }
-            }
-
-            // Apply right edge displacement
-            for (let y = 0; y < maxDimension; y++) {
-                for (let x = maxDimension - leftOffset; x < maxDimension; x++) {
-                    const gradientSegment =
-                        (x - (maxDimension - leftOffset)) / leftOffset; // left to right
-                    const pixelIndex = (y * maxDimension + x) * 4;
-                    const vxValue = -1 * adjustedRefraction;
-                    data[pixelIndex] = Math.max(
-                        0,
-                        Math.min(
-                            255,
-                            Math.round(
-                                127 +
-                                    127 * vxValue * Math.pow(gradientSegment, 1)
-                            )
+                            Math.round(127 - 127 * adjustedRefraction * grad)
                         )
                     );
                 }
@@ -501,14 +362,12 @@ FxFilter.add({
             return imageData;
         }
 
-        // Helper function to create canvas with displacement map and apply blur/mask
         function createCanvasFromImageData(imageData) {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext("2d");
 
-            // Center the displacement map on the canvas
             const offsetX = (maxDimension - width) / 2;
             const offsetY = (maxDimension - height) / 2;
             ctx.putImageData(
@@ -516,20 +375,13 @@ FxFilter.add({
                 -Math.round(offsetX),
                 -Math.round(offsetY)
             );
-            // console.log(
-            //     "Displacement map applied to canvas",
-            //     width,
-            //     height,
-            //     canvas.toDataURL()
-            // );
-            // Apply border radius mask if needed
-            if (borderRadius > 0) {
+
+            if (borderRadius > 0 || offsetValue > 0) {
                 const maskCanvas = new OffscreenCanvas(width, height);
                 const maskCtx = maskCanvas.getContext("2d");
-                maskCtx.fillStyle = "rgb(127, 127, 127)";
+                maskCtx.fillStyle = "rgb(127,127,127)";
                 maskCtx.beginPath();
-                // Make mask smaller based on blur amount to prevent edge transparency
-                const inset = offsetValue * 1; // Adjust multiplier as needed
+                const inset = offsetValue;
                 maskCtx.roundRect(
                     inset,
                     inset,
@@ -540,94 +392,49 @@ FxFilter.add({
                 maskCtx.clip();
                 maskCtx.fillRect(0, 0, width, height);
 
-                ctx.filter = `blur(${offsetValue}px)`;
+                ctx.filter =
+                    offsetValue > 0 ? `blur(${offsetValue}px)` : "none";
                 ctx.drawImage(maskCanvas, 0, 0, width, height);
-            } else if (offsetValue > 0) {
-                ctx.filter = `blur(${offsetValue}px)`;
-                ctx.drawImage(canvas, 0, 0);
             }
 
-            const dataURL = canvas.toDataURL();
-            canvas.remove();
-            return dataURL;
+            return canvas.toDataURL("image/png");
         }
 
-        const maxDimension = Math.ceil(Math.max(width, height));
-
-        // If no chromatic aberration, use simple single displacement
+        let result;
         if (chromaticValue === 0) {
-            const imageData = createDisplacementMap(0);
-            const dataURL = createCanvasFromImageData(imageData);
-
-            return `
-                <feImage result="FEIMG" href="${dataURL}" color-interpolation-filters="sRGB"/>
-                <feDisplacementMap in="SourceGraphic" in2="FEIMG" scale="127" yChannelSelector="B" xChannelSelector="R" color-interpolation-filters="sRGB"/>
+            const img = createDisplacementMap(0);
+            const url = createCanvasFromImageData(img);
+            result = `
+                <feImage result="FEIMG" href="${url}" color-interpolation-filters="sRGB"/>
+                <feDisplacementMap in="SourceGraphic" in2="FEIMG" scale="127" xChannelSelector="R" yChannelSelector="B"/>
             `;
         } else {
-            // Create three displacement maps with different refraction values
-            const chromaticOffset = chromaticValue * 0.25; // Scale the chromatic offset
+            const delta = chromaticValue * 0.25;
+            const urls = [
+                createCanvasFromImageData(createDisplacementMap(delta)),
+                createCanvasFromImageData(createDisplacementMap(0)),
+                createCanvasFromImageData(createDisplacementMap(-delta)),
+            ];
 
-            const redImageData = createDisplacementMap(chromaticOffset); // R: +0.25 * chromatic
-            const greenImageData = createDisplacementMap(0); // G: normal refraction
-            const blueImageData = createDisplacementMap(-chromaticOffset); // B: -0.25 * chromatic
-
-            const redDataURL = createCanvasFromImageData(redImageData);
-            const greenDataURL = createCanvasFromImageData(greenImageData);
-            const blueDataURL = createCanvasFromImageData(blueImageData);
-
-            return `
-                <!-- Red channel displacement -->
-                <feImage result="redImg" href="${redDataURL}" color-interpolation-filters="sRGB"/>
-                <feDisplacementMap in="SourceGraphic" in2="redImg" scale="127" yChannelSelector="B" xChannelSelector="R" color-interpolation-filters="sRGB" result="redDisplaced"/>
-                <feComponentTransfer in="redDisplaced" result="redChannel">
-                    <feFuncR type="identity"/>
-                    <feFuncG type="discrete" tableValues="0"/>
-                    <feFuncB type="discrete" tableValues="0"/>
-                    <feFuncA type="identity"/>
-                </feComponentTransfer>
-
-                <!-- Green channel displacement -->
-                <feImage result="greenImg" href="${greenDataURL}" color-interpolation-filters="sRGB"/>
-                <feDisplacementMap in="SourceGraphic" in2="greenImg" scale="127" yChannelSelector="B" xChannelSelector="R" color-interpolation-filters="sRGB" result="greenDisplaced"/>
-                <feComponentTransfer in="greenDisplaced" result="greenChannel">
-                    <feFuncR type="discrete" tableValues="0"/>
-                    <feFuncG type="identity"/>
-                    <feFuncB type="discrete" tableValues="0"/>
-                    <feFuncA type="identity"/>
-                </feComponentTransfer>
-
-                <!-- Blue channel displacement -->
-                <feImage result="blueImg" href="${blueDataURL}" color-interpolation-filters="sRGB"/>
-                <feDisplacementMap in="SourceGraphic" in2="blueImg" scale="127" yChannelSelector="B" xChannelSelector="R" color-interpolation-filters="sRGB" result="blueDisplaced"/>
-                <feComponentTransfer in="blueDisplaced" result="blueChannel">
-                    <feFuncR type="discrete" tableValues="0"/>
-                    <feFuncG type="discrete" tableValues="0"/>
-                    <feFuncB type="identity"/>
-                    <feFuncA type="identity"/>
-                </feComponentTransfer>
-
-                <!-- Combine all channels -->
-                <feComposite in="redChannel" in2="greenChannel" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="redGreen"/>
-                <feComposite in="redGreen" in2="blueChannel" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="final"/>
+            result = `
+                <feImage result="r" href="${urls[0]}" color-interpolation-filters="sRGB"/>
+                <feDisplacementMap in="SourceGraphic" in2="r" scale="127" xChannelSelector="R" yChannelSelector="B" result="rDisp"/>
+                <feComponentTransfer in="rDisp" result="rCh"><feFuncR type="identity"/><feFuncG type="discrete" tableValues="0"/><feFuncB type="discrete" tableValues="0"/></feComponentTransfer>
+                <feImage result="g" href="${urls[1]}" color-interpolation-filters="sRGB"/>
+                <feDisplacementMap in="SourceGraphic" in2="g" scale="127" xChannelSelector="R" yChannelSelector="B" result="gDisp"/>
+                <feComponentTransfer in="gDisp" result="gCh"><feFuncR type="discrete" tableValues="0"/><feFuncG type="identity"/><feFuncB type="discrete" tableValues="0"/></feComponentTransfer>
+                <feImage result="b" href="${urls[2]}" color-interpolation-filters="sRGB"/>
+                <feDisplacementMap in="SourceGraphic" in2="b" scale="127" xChannelSelector="R" yChannelSelector="B" result="bDisp"/>
+                <feComponentTransfer in="bDisp" result="bCh"><feFuncR type="discrete" tableValues="0"/><feFuncG type="discrete" tableValues="0"/><feFuncB type="identity"/></feComponentTransfer>
+                <feComposite in="rCh" in2="gCh" operator="arithmetic" k2="1" k3="1" result="rg"/>
+                <feComposite in="rg" in2="bCh" operator="arithmetic" k2="1" k3="1" result="final"/>
             `;
         }
+
+        FxFilter._cache.set(element, { key, result });
+        return result;
     },
     updatesOn: ["border-radius", "width", "height"],
 });
-
-// FxFilter.add({
-//     name: "color-overlay",
-//     callback: (element, color = "black", opacity = 0.5) => {
-//         // Convert opacity to number if string
-//         const alpha =
-//             typeof opacity === "string" ? parseFloat(opacity) : opacity;
-//         // SVG feFlood for color overlay
-//         return `
-//             <feFlood flood-color="${color}" flood-opacity="${alpha}" result="flood"/>
-//             <feComposite in="flood" in2="SourceGraphic" operator="atop"/>
-//         `;
-//     },
-//     updatesOn: [], // No dynamic style dependencies
-// });
 
 FxFilter.init();

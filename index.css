@@ -81,6 +81,7 @@ a {
 
 #smooth-content {
     will-change: transform;
+    contain: layout style;
 }
 
 .center {
@@ -248,6 +249,8 @@ body.loading-active .custom-scrollbar {
     margin: 0;
     word-spacing: clamp(25px, 8vw, 50px);
     cursor: default;
+    will-change: transform, opacity;
+    contain: layout style paint;
 }
 
 .about-header {
@@ -284,6 +287,8 @@ body.loading-active .custom-scrollbar {
     font-weight: 300;
     text-align: start;
     transition: filter 0.3s ease-out;
+    will-change: filter;
+    contain: layout style paint;
 }
 
 /* endregion */
@@ -551,10 +556,10 @@ body.loading-active .custom-scrollbar {
 }
 
 .skills-content {
-    margin: 1rem 0;
+    padding: 4rem 0;
     position: relative;
     width: min(82vw, 75rem);
-    height: 80vh;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -585,6 +590,9 @@ body.loading-active .custom-scrollbar {
     cursor: grab;
     user-select: none;
     pointer-events: auto;
+    will-change: transform;
+    contain: layout style paint;
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .glass-card::before {
@@ -612,6 +620,7 @@ body.loading-active .custom-scrollbar {
     align-items: flex-start;
     padding: 2rem 0;
     z-index: 1;
+    gap: clamp(1rem, 9.5vw, 6.25rem);
 }
 
 .skill-item {
@@ -677,7 +686,7 @@ body.loading-active .custom-scrollbar {
         opacity: 0;
         transform: translateY(-100%);
     }
-    
+
     .glass-card {
         cursor: default !important;
         pointer-events: none;
@@ -697,19 +706,20 @@ body.loading-active .custom-scrollbar {
     }
 
     .skills-content {
-        height: 100vh;
+        padding: 1rem 0;
     }
 
     .glass-card {
         height: 21.875rem;
     }
-
-    .skill-item {
-        align-items: start;
+    
+    .skills-list {
+        gap: 0;
     }
 
-    .skill-item:not(:first-child) {
-        margin-top: 2rem;
+    .skill-item {
+        padding: 0.5rem 0 13rem 0;
+        align-items: start;
     }
 
     .skill-icons {
@@ -724,10 +734,6 @@ body.loading-active .custom-scrollbar {
 
 /* Mobile */
 @media screen and (max-width: 480px) {
-    .skills-content {
-        height: 115vh;
-    }
-
     .skill-row {
         gap: 0;
     }
