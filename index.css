@@ -556,14 +556,13 @@ body.loading-active .custom-scrollbar {
 }
 
 .skills-content {
-    margin: 1rem 0;
+    padding: 4rem 0;
     position: relative;
     width: min(82vw, 75rem);
-    height: 80vh;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    contain: layout style paint;
 }
 
 .glass-card-container {
@@ -621,6 +620,7 @@ body.loading-active .custom-scrollbar {
     align-items: flex-start;
     padding: 2rem 0;
     z-index: 1;
+    gap: clamp(1rem, 9.5vw, 6.25rem);
 }
 
 .skill-item {
@@ -706,19 +706,20 @@ body.loading-active .custom-scrollbar {
     }
 
     .skills-content {
-        height: 100vh;
+        padding: 1rem 0;
     }
 
     .glass-card {
         height: 21.875rem;
     }
-
-    .skill-item {
-        align-items: start;
+    
+    .skills-list {
+        gap: 0;
     }
 
-    .skill-item:not(:first-child) {
-        margin-top: 2rem;
+    .skill-item {
+        padding: 0.5rem 0 13rem 0;
+        align-items: start;
     }
 
     .skill-icons {
@@ -733,10 +734,6 @@ body.loading-active .custom-scrollbar {
 
 /* Mobile */
 @media screen and (max-width: 480px) {
-    .skills-content {
-        height: 115vh;
-    }
-
     .skill-row {
         gap: 0;
     }
