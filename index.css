@@ -81,6 +81,7 @@ a {
 
 #smooth-content {
     will-change: transform;
+    contain: layout style;
 }
 
 .center {
@@ -248,6 +249,8 @@ body.loading-active .custom-scrollbar {
     margin: 0;
     word-spacing: clamp(25px, 8vw, 50px);
     cursor: default;
+    will-change: transform, opacity;
+    contain: layout style paint;
 }
 
 .about-header {
@@ -284,6 +287,8 @@ body.loading-active .custom-scrollbar {
     font-weight: 300;
     text-align: start;
     transition: filter 0.3s ease-out;
+    will-change: filter;
+    contain: layout style paint;
 }
 
 /* endregion */
@@ -558,6 +563,7 @@ body.loading-active .custom-scrollbar {
     display: flex;
     align-items: center;
     justify-content: center;
+    contain: layout style paint;
 }
 
 .glass-card-container {
@@ -585,6 +591,9 @@ body.loading-active .custom-scrollbar {
     cursor: grab;
     user-select: none;
     pointer-events: auto;
+    will-change: transform;
+    contain: layout style paint;
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .glass-card::before {
@@ -677,7 +686,7 @@ body.loading-active .custom-scrollbar {
         opacity: 0;
         transform: translateY(-100%);
     }
-    
+
     .glass-card {
         cursor: default !important;
         pointer-events: none;

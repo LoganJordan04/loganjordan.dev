@@ -132,11 +132,30 @@ export class ScrollWords {
             document.addEventListener("DOMContentLoaded", () => {
                 this.setupScrolling();
                 this.setupConvergeAnimation();
+                this.setupResizeHandler();
             });
         } else {
             this.setupScrolling();
             this.setupConvergeAnimation();
+            this.setupResizeHandler();
         }
+    }
+
+    setupResizeHandler() {
+        window.addEventListener("resize", this.handleResize);
+    }
+
+    handleResize() {
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
+        this.resizeTimeout = setTimeout(() => {
+            this.refreshScrollTriggers();
+        }, 150);
+    }
+
+    refreshScrollTriggers() {
+        ScrollTrigger.refresh();
     }
 
     setupScrolling() {
@@ -370,26 +389,45 @@ export class ScrollWords {
     updateConvergeAnimation(progress) {
         if (!this.isConverging) return;
 
-        const words = document.querySelectorAll(".about-words");
-        const wordsContainer = document.querySelector(".words-container");
-        const aboutThreeContainer = document.getElementById(
-            "about-three-container"
-        );
-        const aboutContainer = document.getElementById("about-container");
-        const aboutHeader = document.querySelector(".about-header");
+        // Cache DOM elements at init instead of querying every frame
+        if (!this.cachedElements) {
+            this.cachedElements = {
+                words: document.querySelectorAll(".about-words"),
+                wordsContainer: document.querySelector(".words-container"),
+                aboutThreeContainer: document.getElementById(
+                    "about-three-container"
+                ),
+                aboutContainer: document.getElementById("about-container"),
+                aboutHeader: document.querySelector(".about-header"),
+            };
+        }
+
+        const {
+            words,
+            wordsContainer,
+            aboutThreeContainer,
+            aboutContainer,
+            aboutHeader,
+        } = this.cachedElements;
 
         if (!wordsContainer || !aboutThreeContainer) return;
 
-        // Get the original gap (3rem from CSS) - calculate based on current font size
-        const computedStyle = window.getComputedStyle(document.documentElement);
-        const fontSize = parseFloat(computedStyle.fontSize) || 16;
-        const originalGap = 3 * fontSize; // 3rem in pixels
-        const minimumGap = 0;
+        // Cache computed values only once
+        if (!this.computedValues) {
+            const computedStyle = window.getComputedStyle(
+                document.documentElement
+            );
+            const fontSize = parseFloat(computedStyle.fontSize) || 16;
+            this.computedValues = {
+                originalGap: 3 * fontSize,
+                minimumGap: 0,
+            };
+        }
 
-        // Calculate new gap based on scroll progress
+        const { originalGap, minimumGap } = this.computedValues;
         const currentGap = originalGap - (originalGap - minimumGap) * progress;
 
-        // Apply the gap reduction to the container using GSAP for consistency
+        // Keep the original gap animation
         gsap.set(wordsContainer, {
             gap: `${Math.max(0, currentGap)}px`,
         });
@@ -402,7 +440,7 @@ export class ScrollWords {
         );
 
         gsap.set(aboutThreeContainer, {
-            opacity: threeContainerProgress * 0.85, // 85% opacity
+            opacity: threeContainerProgress * 0.85,
         });
 
         // Words fade out
@@ -423,11 +461,17 @@ export class ScrollWords {
 
                     // Make words unselectable when they start fading out
                     if (fadeProgress > 0) {
-                        word.style.userSelect = "none";
-                        word.style.pointerEvents = "none";
+                        if (!word.dataset.unselectable) {
+                            word.style.userSelect = "none";
+                            word.style.pointerEvents = "none";
+                            word.dataset.unselectable = "true";
+                        }
                     } else {
-                        word.style.userSelect = "";
-                        word.style.pointerEvents = "";
+                        if (word.dataset.unselectable) {
+                            word.style.userSelect = "";
+                            word.style.pointerEvents = "";
+                            delete word.dataset.unselectable;
+                        }
                     }
                 });
             }
@@ -464,11 +508,17 @@ export class ScrollWords {
 
                 // Make header unselectable until it starts fading in
                 if (headerProgress > 0) {
-                    aboutHeader.style.userSelect = "";
-                    aboutHeader.style.pointerEvents = "";
+                    if (aboutHeader.dataset.unselectable) {
+                        aboutHeader.style.userSelect = "";
+                        aboutHeader.style.pointerEvents = "";
+                        delete aboutHeader.dataset.unselectable;
+                    }
                 } else {
-                    aboutHeader.style.userSelect = "none";
-                    aboutHeader.style.pointerEvents = "none";
+                    if (!aboutHeader.dataset.unselectable) {
+                        aboutHeader.style.userSelect = "none";
+                        aboutHeader.style.pointerEvents = "none";
+                        aboutHeader.dataset.unselectable = "true";
+                    }
                 }
             }
         }
@@ -608,8 +658,13 @@ export class GlassCardSnap {
         this.glassCard = document.querySelector(".glass-card");
         this.skillItems = document.querySelectorAll(".skill-item");
         this.skillsContainer = document.getElementById("skills-container");
-        
+
         this.isTouchDevice = "ontouchstart" in document.documentElement;
+
+        // Cache DOM elements and rects
+        this.cachedRects = new Map();
+        this.lastCacheTime = 0;
+        this.cacheValidDuration = 100; // 100ms cache validity
 
         // Get all skillset elements
         this.skillsets = {
@@ -624,7 +679,7 @@ export class GlassCardSnap {
             isSnapping: false,
             currentTargetIndex: 0,
             dragOffset: { x: 0, y: 0 },
-            currentSkillset: "design", // Track current active skillset
+            currentSkillset: "design",
         };
 
         // Animation frame tracking
@@ -632,6 +687,10 @@ export class GlassCardSnap {
             drag: null,
             blur: null,
         };
+
+        // Throttle blur updates
+        this.lastBlurUpdate = 0;
+        this.blurUpdateThrottle = 16; // ~60fps
 
         this.scrollTrigger = null;
 
@@ -742,6 +801,19 @@ export class GlassCardSnap {
     }
 
     // Utility methods
+    getCachedRect(element, key) {
+        const now = performance.now();
+        if (now - this.lastCacheTime > this.cacheValidDuration) {
+            this.cachedRects.clear();
+            this.lastCacheTime = now;
+        }
+
+        if (!this.cachedRects.has(key)) {
+            this.cachedRects.set(key, element.getBoundingClientRect());
+        }
+        return this.cachedRects.get(key);
+    }
+
     getEventCoords(e) {
         return {
             clientX: e.clientX || e.touches[0].clientX,
@@ -779,8 +851,16 @@ export class GlassCardSnap {
     }
 
     scheduleBlurUpdate() {
+        const now = performance.now();
+        if (now - this.lastBlurUpdate < this.blurUpdateThrottle) {
+            return;
+        }
+
         this.cancelFrame("blur");
-        this.frames.blur = requestAnimationFrame(() => this.updateBlurEffect());
+        this.frames.blur = requestAnimationFrame(() => {
+            this.updateBlurEffect();
+            this.lastBlurUpdate = performance.now();
+        });
     }
 
     createScrollTrigger() {
@@ -1007,11 +1087,14 @@ export class GlassCardSnap {
         const cardCenter = this.getCardCenter();
         const padding = 20;
 
-        this.skillItems.forEach((item) => {
+        // Use cached rects and batch style updates
+        const styleUpdates = [];
+
+        this.skillItems.forEach((item, index) => {
             const skillSub = item.querySelector(".skills-sub");
             if (!skillSub) return;
 
-            const itemRect = item.getBoundingClientRect();
+            const itemRect = this.getCachedRect(item, `skill-${index}`);
             const isOverlapping = this.isCardOverlappingItem(
                 cardCenter,
                 itemRect,
@@ -1019,12 +1102,17 @@ export class GlassCardSnap {
             );
 
             if (isOverlapping) {
-                skillSub.style.filter = "blur(0px)";
+                styleUpdates.push(() => (skillSub.style.filter = "blur(0px)"));
             } else {
                 const blur = this.calculateBlurAmount(cardCenter, itemRect);
-                skillSub.style.filter = `blur(${blur}px)`;
+                styleUpdates.push(
+                    () => (skillSub.style.filter = `blur(${blur}px)`)
+                );
             }
         });
+
+        // Batch apply style updates
+        styleUpdates.forEach((update) => update());
     }
 
     isCardOverlappingItem(cardCenter, itemRect, padding) {
