@@ -20,7 +20,6 @@ function initializeApp() {
         smooth: 1.25,
         effects: true,
         smoothTouch: 0.1,
-        normalizeScroll: true,
         ignoreMobileResize: true,
         // Performance optimizations
         onUpdate: (self) => {
@@ -112,9 +111,6 @@ function initializeApp() {
         if (aboutContainer) observer.observe(aboutContainer);
     }
 
-    // Make smoother globally accessible for other components
-    window.scrollSmoother = smoother;
-
     // Development popup functionality
     function closeDevPopup() {
         const popup = document.getElementById("devPopup");
@@ -141,11 +137,6 @@ function initializeApp() {
 if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
 }
-
-// Force scroll to top on page unload
-window.addEventListener("beforeunload", () => {
-    window.scrollTo(0, 0);
-});
 
 // Initialize when DOM is ready
 if (document.readyState === "loading") {
