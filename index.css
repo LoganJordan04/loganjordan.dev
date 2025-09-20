@@ -467,8 +467,8 @@ body.loading-active .custom-scrollbar {
 /* region About Section */
 
 #about {
-    height: 345vh;
     position: relative;
+    height: 350vh;
 }
 
 #about-scroll-container {
@@ -559,8 +559,6 @@ body.loading-active .custom-scrollbar {
 #skills-container {
     position: relative;
     top: 145vh;
-    min-height: 100vh;
-    padding: 3rem 0;
 }
 
 .skills-content {
@@ -684,15 +682,26 @@ body.loading-active .custom-scrollbar {
 
 /* region Work Section */
 
-#work-container {
+#work-grid {
     margin-top: 3.125rem;
+    width: min(90vw, 1050px);
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3.125rem;
+    grid-template-columns: auto minmax(0.5rem, 3.125rem) auto;
+    grid-template-areas:
+    "jots . port";
+    /* Eventually have 3 cards in a row for wide screens  */
+}
+
+#jotspc {
+    grid-area: jots;
+}
+
+#portfolio {
+    grid-area: port;
 }
 
 .project-card {
-    width: 400px;
+    width: clamp(400px, 100%, 500px);
     height: fit-content;
     background-color: var(--secondary-black);
     border-radius: 20px;
@@ -708,7 +717,7 @@ body.loading-active .custom-scrollbar {
 
 .project-img-container {
     width: 100%;
-    max-height: 320px;
+    max-height: clamp(320px, 34vw, 400px);
     overflow: hidden;
     position: relative;
 }
@@ -725,7 +734,7 @@ body.loading-active .custom-scrollbar {
 }
 
 .project-card:hover .project-img-scroll {
-    transform: translateY(calc(-100% + 320px));
+    transform: translateY(calc(-100% + clamp(320px, 25vw, 400px)));
     transition: transform 30s ease;
 }
 
@@ -745,6 +754,7 @@ body.loading-active .custom-scrollbar {
     display: flex;
     flex-direction: row;
     gap: 0.625rem;
+    flex-wrap: wrap;
 }
 
 .project-skill-item {
@@ -752,6 +762,36 @@ body.loading-active .custom-scrollbar {
     color: var(--tertiary-white);
     background-color: var(--tertiary-black);
     border-radius: 50px;
+}
+
+.github-link-container {
+    margin: 3.125rem 0 0 0;
+    display: flex;
+    width: min(90vw, 1050px);
+    justify-content: end;
+}
+
+.github-link {
+    font-size: 1.5rem;
+    color: var(--secondary-white);
+    text-align: end;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.github-link:hover {
+    color: var(--primary-white);
+}
+
+.link-arrow {
+    height: 1.125rem;
+    transition: transform 0.3s ease-out;
+}
+
+.github-link:hover .link-arrow {
+    transform: translateX(0.25rem);
 }
 
 /* endregion */
@@ -779,8 +819,38 @@ body.loading-active .custom-scrollbar {
     }
 }
 
+/* Work section rearrangement */
+@media screen and (max-width: 860px) {
+    #work-grid {
+        width: auto;
+        grid-template-rows: auto 1.25rem auto;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+        "jots"
+        "."
+        "port";
+        /* Limit to 4 cards */
+    }
+
+    .project-card {
+        width: min(90vw, 500px);
+    }
+
+    .project-img-container {
+        max-height: min(72vw, 400px);
+    }
+
+    .github-link-container {
+        width: min(90vw, 500px);
+    }
+}
+
 /* Tablet */
 @media screen and (max-width: 768px) {
+    #about {
+        height: 360vh;
+    }
+
     .skills-sub {
         padding: 0;
         font-size: clamp(3.75rem, 7.9vw, 6.25rem);
@@ -816,6 +886,10 @@ body.loading-active .custom-scrollbar {
 
 /* Mobile */
 @media screen and (max-width: 480px) {
+    #about {
+        height: 375vh;
+    }
+
     .skill-row {
         gap: 0;
     }
@@ -826,6 +900,10 @@ body.loading-active .custom-scrollbar {
 
     .skill-icon {
         height: 2.5rem;
+    }
+
+    .work-header {
+        font-size: 5rem;
     }
 }
 
