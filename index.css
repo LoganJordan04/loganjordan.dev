@@ -734,7 +734,7 @@ body.loading-active .custom-scrollbar {
 }
 
 .project-card:hover .project-img-scroll {
-    transform: translateY(calc(-100% + clamp(320px, 25vw, 400px)));
+    transform: translateY(calc(-100% + clamp(320px, 34vw, 400px)));
     transition: transform 30s ease;
 }
 
