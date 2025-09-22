@@ -66,6 +66,7 @@ function initializeApp() {
     function initThreeJsContainers() {
         const heroContainer = document.getElementById("hero-three-container");
         const aboutContainer = document.getElementById("about-three-container");
+        const expContainer = document.getElementById("exp-three-container");
 
         // Use Intersection Observer for lazy loading
         const observer = new IntersectionObserver(
@@ -100,6 +101,19 @@ function initializeApp() {
                             target.dataset.initialized = "true";
                         }
 
+                        if (
+                            target.id === "exp-three-container" &&
+                            !target.dataset.initialized
+                        ) {
+                            window.aboutSketch = new Sketch({
+                                dom: target,
+                                section: "exp",
+                                geometryWidth: 4,
+                                geometryHeight: 2,
+                            });
+                            target.dataset.initialized = "true";
+                        }
+
                         observer.unobserve(target);
                     }
                 });
@@ -109,6 +123,7 @@ function initializeApp() {
 
         if (heroContainer) observer.observe(heroContainer);
         if (aboutContainer) observer.observe(aboutContainer);
+        if (expContainer) observer.observe(expContainer);
     }
 
     // Development popup functionality
