@@ -659,7 +659,7 @@ export class GlassCardSnap {
         this.skillItems = document.querySelectorAll(".skill-item");
         this.skillsContainer = document.getElementById("skills-container");
 
-        this.isTouchDevice = "ontouchstart" in document.documentElement;
+        this.isTouchDevice = (navigator.maxTouchPoints || 'ontouchstart' in document.documentElement);
 
         // Cache DOM elements and rects
         this.cachedRects = new Map();
