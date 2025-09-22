@@ -1,7 +1,7 @@
 import { Sketch } from "./sketch.js";
 import { LoadingManager } from "./loading.js";
 import { CustomScrollbar } from "./scrollbar.js";
-import { NavManager, HeaderManager, HeaderColorManager } from "./header.js";
+import { NavManager, HeaderManager } from "./header.js";
 import { SkipLinkManager, ScrollWords, GlassCardSnap } from "./animations.js";
 
 import { gsap } from "gsap";
@@ -15,11 +15,14 @@ function initializeApp() {
     // Force scroll to top
     window.scrollTo(0, 0);
 
+    const isMobile = /Mobi/i.test(window.navigator.userAgent);
+
     // Initialize ScrollSmoother
     const smoother = ScrollSmoother.create({
         smooth: 1.25,
         effects: true,
         smoothTouch: 0.1,
+        normalizeScroll: isMobile,
         ignoreMobileResize: true,
         // Performance optimizations
         onUpdate: (self) => {
@@ -49,7 +52,6 @@ function initializeApp() {
         new CustomScrollbar();
         new NavManager();
         new HeaderManager();
-        new HeaderColorManager();
         new SkipLinkManager();
 
         // Initialize animations with staggered loading

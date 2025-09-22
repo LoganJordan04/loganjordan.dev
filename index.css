@@ -890,7 +890,7 @@ body.loading-active .custom-scrollbar {
     }
 
     .glass-card {
-        height: 21.875rem;
+        height: 42vh;
     }
 
     .skills-list {
@@ -898,7 +898,7 @@ body.loading-active .custom-scrollbar {
     }
 
     .skill-item {
-        padding: 0.5rem 0 13rem 0;
+        padding: 0.5rem 0 12.5rem 0;
         align-items: start;
     }
 
@@ -915,7 +915,7 @@ body.loading-active .custom-scrollbar {
 /* Mobile */
 @media screen and (max-width: 480px) {
     #about {
-        height: 375vh;
+        height: 390vh;
     }
 
     .skill-row {
