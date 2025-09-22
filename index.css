@@ -222,6 +222,52 @@ body.loading-active .custom-scrollbar {
 
 /* endregion */
 
+/* region Three.js Containers */
+
+#hero-three-container,
+#about-three-container,
+#exp-three-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    overflow: hidden;
+}
+
+#hero-three-container::after,
+#about-three-container::before,
+#about-three-container::after,
+#exp-three-container::before,
+#exp-three-container::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    z-index: 1;
+}
+
+#about-three-container::before,
+#exp-three-container::before {
+    top: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
+}
+
+#about-three-container::after,
+#exp-three-container::after {
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        var(--primary-black) 100%
+    );
+}
+
+/* endregion */
+
 /* region Typography */
 
 .hero-title {
@@ -275,6 +321,7 @@ body.loading-active .custom-scrollbar {
     width: 90vw;
     font-size: clamp(5.625rem, 12vw, 9.375rem);
     text-align: center;
+    z-index: 2;
 }
 
 .skills-sub {
@@ -393,23 +440,13 @@ body.loading-active .custom-scrollbar {
 }
 
 #hero-three-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
     height: 110vh;
-    z-index: 0;
-    overflow: hidden;
 }
 
 #hero-three-container::after {
-    content: "";
-    position: absolute;
     left: 0;
     bottom: 0;
-    width: 100%;
     height: 80px;
-    z-index: 2;
     background: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
@@ -482,42 +519,14 @@ body.loading-active .custom-scrollbar {
 }
 
 #about-three-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
     height: 100%;
-    z-index: 0;
     opacity: 0;
     filter: blur(10px);
 }
 
 #about-three-container::before,
 #about-three-container::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    width: 100%;
     height: 150px;
-    z-index: 2;
-}
-
-#about-three-container::before {
-    top: 0;
-    background: linear-gradient(
-        to top,
-        rgba(0, 0, 0, 0) 0%,
-        var(--primary-black) 100%
-    );
-}
-
-#about-three-container::after {
-    bottom: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0) 0%,
-        var(--primary-black) 100%
-    );
 }
 
 .words-container {
@@ -792,6 +801,25 @@ body.loading-active .custom-scrollbar {
 
 .github-link:hover .link-arrow {
     transform: translateX(0.25rem);
+}
+
+/* endregion */
+
+/* region Experience Section */
+
+#experience {
+    position: relative;
+    /*height: 100vh;*/
+}
+
+#exp-three-container {
+    top: clamp(6.875rem, 13vw, 10rem);
+    height: 90vh;
+}
+
+#exp-three-container::before,
+#exp-three-container::after {
+    height: 180px;
 }
 
 /* endregion */
