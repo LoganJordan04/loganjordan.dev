@@ -100,7 +100,7 @@ export class Sketch {
             }
         });
 
-        window.addEventListener('resize', () => this.onWindowResize());
+        window.addEventListener("resize", () => this.onWindowResize());
     }
 
     onWindowResize() {
@@ -120,8 +120,15 @@ export class Sketch {
         const width = height * this.camera.aspect;
 
         this.geometry.dispose();
-        this.geometry = new THREE.PlaneGeometry(width, this.geometryHeight, 1, 1);
+        this.geometry = new THREE.PlaneGeometry(
+            width,
+            this.geometryHeight,
+            1,
+            1
+        );
         this.plane.geometry = this.geometry;
+
+        this.material.uniforms.vw.value = this.width;
     }
 
     // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
@@ -152,6 +159,7 @@ export class Sketch {
                 uColor: { value: this.palette },
                 mouse: { value: new THREE.Vector2(0, 0) },
                 opacity: { value: 0 },
+                vw: { value: this.width },
             },
             vertexShader: vertex,
             fragmentShader: selectedFragment,

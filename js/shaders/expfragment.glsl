@@ -1,6 +1,7 @@
 uniform float time;
 uniform vec3 uColor[3];
 uniform vec2 mouse;
+uniform float vw;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -81,9 +82,12 @@ float cnoise(vec3 P){
 
 // Generates a smooth line pattern based on UV and offset
 float lines(vec2 uv, float offset) {
+    // Calculate frequency based on viewport width (10 at 1024px, scales inversely)
+    float frequency = 10240. / vw;
+
     return smoothstep(
     0., 0.5 + offset * 0.2,
-    0.5 * abs((cos(uv.y * 10.) + offset * 1.))
+    0.5 * abs((cos(uv.y * frequency) + offset * 1.))
     );
 }
 
