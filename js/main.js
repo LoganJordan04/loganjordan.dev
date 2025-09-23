@@ -2,7 +2,12 @@ import { Sketch } from "./sketch.js";
 import { LoadingManager } from "./loading.js";
 import { CustomScrollbar } from "./scrollbar.js";
 import { NavManager, HeaderManager } from "./header.js";
-import { SkipLinkManager, ScrollWords, GlassCardSnap } from "./animations.js";
+import {
+    SkipLinkManager,
+    ScrollWords,
+    GlassCardSnap,
+    ExperienceCards,
+} from "./animations.js";
 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -56,7 +61,8 @@ function initializeApp() {
 
         // Initialize animations with staggered loading
         setTimeout(() => new ScrollWords(), 50);
-        setTimeout(() => new GlassCardSnap(), 150);
+        setTimeout(() => new GlassCardSnap(), 100);
+        setTimeout(() => new ExperienceCards(), 150);
 
         // Make smoother globally accessible
         window.scrollSmoother = smoother;
