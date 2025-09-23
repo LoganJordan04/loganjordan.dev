@@ -39,6 +39,10 @@ body {
     letter-spacing: 0.02em;
 }
 
+h1, h2, h3, h4, p, ul {
+    margin: 0;
+}
+
 h1, h2 {
     font-family: var(--font-heading);
     font-weight: 600;
@@ -47,9 +51,14 @@ h1, h2 {
     line-height: 0.95;
 }
 
-h3 {
+h3, h4 {
     font-family: var(--font-primary);
     color: var(--primary-white);
+}
+
+h4 {
+    font-weight: 400;
+    letter-spacing: 0.03em;
 }
 
 p {
@@ -60,13 +69,19 @@ p {
 }
 
 ul {
-    margin: 0;
     padding: 0;
     list-style-type: none;
 }
 
 a {
+    color: var(--secondary-white);
     text-decoration: none;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    padding: 0;
 }
 
 ::-webkit-scrollbar {
@@ -271,7 +286,6 @@ body.loading-active .custom-scrollbar {
 /* region Typography */
 
 .hero-title {
-    margin: 0;
     font-size: clamp(5rem, 9.8vw, 9.375rem);
     cursor: default;
 }
@@ -294,7 +308,6 @@ body.loading-active .custom-scrollbar {
     letter-spacing: 0.03em;
     line-height: normal;
     white-space: nowrap;
-    margin: 0;
     word-spacing: clamp(25px, 8vw, 50px);
     cursor: default;
     will-change: transform, opacity;
@@ -302,7 +315,6 @@ body.loading-active .custom-scrollbar {
 }
 
 .about-header {
-    margin: 0;
     width: 90vw;
     font-size: clamp(3.75rem, 6.8vw, 6.25rem);
     text-align: center;
@@ -317,7 +329,6 @@ body.loading-active .custom-scrollbar {
 }
 
 .section-header {
-    margin: 0;
     width: 90vw;
     font-size: clamp(5.625rem, 12vw, 9.375rem);
     text-align: center;
@@ -325,7 +336,6 @@ body.loading-active .custom-scrollbar {
 }
 
 .skills-sub {
-    margin: 0;
     padding-left: 3.125rem;
     width: 100%;
     font-size: clamp(3.75rem, 7.9vw, 6.25rem);
@@ -337,13 +347,23 @@ body.loading-active .custom-scrollbar {
 }
 
 .project-title {
-    margin: 0;
     font-family: var(--font-heading);
     font-size: 1.25rem;
 }
 
-.project-p {
-    margin: 0;
+.exp-title {
+    font-family: var(--font-heading);
+    font-size: 1.875rem;
+}
+
+.exp-date {
+    color: var(--primary-white);
+}
+
+.exp-description {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    color: var(--secondary-white);
 }
 
 /* endregion */
@@ -782,7 +802,6 @@ body.loading-active .custom-scrollbar {
 
 .github-link {
     font-size: 1.5rem;
-    color: var(--secondary-white);
     text-align: end;
     display: flex;
     align-items: center;
@@ -809,17 +828,181 @@ body.loading-active .custom-scrollbar {
 
 #experience {
     position: relative;
-    /*height: 100vh;*/
+    height: 100vh;
 }
 
 #exp-three-container {
     top: clamp(6.875rem, 13vw, 10rem);
-    height: 90vh;
+    height: 80vh;
 }
 
 #exp-three-container::before,
 #exp-three-container::after {
-    height: 180px;
+    height: 150px;
+}
+
+.exp-container {
+    position: absolute;
+    top: 20rem;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(90vw, 700px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.exp-card-group {
+    width: 100%;
+}
+
+.exp-card, .exp-details-card {
+    padding: 1.25rem 2rem;
+    border-radius: 10px;
+    transition: all 0.5s ease;
+    overflow: hidden;
+    inset: 0;
+    background-color: rgba(245, 245, 245, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 1rem 1rem 1.5rem rgba(0, 0, 0, 0.3),
+    inset -1rem -1rem 1.5rem rgba(40, 40, 40, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset 1px 0 1px rgba(255, 255, 255, 0.2),
+    inset -1px 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.exp-card {
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.exp-details-card {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: max-content;
+    display: flex;
+    align-items: center;
+    gap: 3.125rem;
+    background-color: rgba(245, 245, 245, 0.05);
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    transition: all 0.5s ease;
+    z-index: 1;
+}
+
+.exp-card.expanded + .exp-details-card {
+    max-height: 300px;
+    opacity: 1;
+    margin-top: 0.625rem;
+}
+
+.exp-card.expanded {
+    background-color: rgba(245, 245, 245, 0.15);
+}
+
+/*.exp-card:hover {*/
+/*    transform: translateY(-2px);*/
+/*    box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);*/
+/*}*/
+
+.exp-card-inner, .exp-card-inner-details {
+    height: 100%;
+    transition: all 0.5s ease;
+}
+
+.exp-card-header {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.exp-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.exp-right {
+    display: flex;
+    align-items: center;
+    gap: 1.875rem;
+}
+
+.exp-toggle {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+}
+
+.exp-toggle span:nth-child(1), span:nth-child(2) {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    border-radius: 10px;
+    background: var(--secondary-white);
+    transition: all 0.5s ease;
+}
+
+.exp-toggle span:nth-child(1) {
+    top: calc(50% - 2px);
+    left: 0;
+}
+
+.exp-toggle span:nth-child(2) {
+    rotate: 90deg;
+    top: calc(50% - 2px);
+    left: 0;
+}
+
+.exp-card.expanded .exp-toggle span:nth-child(2) {
+    transform: rotate(-90deg);
+}
+
+.exp-inner-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.exp-location, .exp-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--tertiary-white);
+}
+
+.location-icon {
+    height: 1rem;
+}
+
+.exp-link-arrow {
+    height: 0.875rem;
+}
+
+.exp-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.exp-skill {
+    padding: 0.25rem 0.625rem;
+    color: var(--tertiary-white);
+    background-color: rgba(38, 38, 38, 0.5);
+    border-radius: 50px;
+}
+
+.exp-icon {
+    height: 5rem;
+    filter: drop-shadow(0 0 15px rgba(10, 10, 10, 0.4));
 }
 
 /* endregion */
