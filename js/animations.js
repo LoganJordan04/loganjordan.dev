@@ -659,7 +659,7 @@ export class GlassCardSnap {
         this.skillItems = document.querySelectorAll(".skill-item");
         this.skillsContainer = document.getElementById("skills-container");
 
-        this.isTouchDevice = (navigator.maxTouchPoints || 'ontouchstart' in document.documentElement);
+        this.isTouchDevice = "ontouchstart" in document.documentElement;
 
         // Cache DOM elements and rects
         this.cachedRects = new Map();
@@ -1137,5 +1137,41 @@ export class GlassCardSnap {
 
         const normalizedDistance = Math.min(1, distance / 200);
         return normalizedDistance * 3; // maxBlur = 3
+    }
+}
+
+// Experience card manager
+export class ExperienceCards {
+    constructor() {
+        this.cards = document.querySelectorAll(".exp-card");
+
+        if (this.cards.length > 0) {
+            this.init();
+        }
+    }
+
+    init() {
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        this.cards.forEach((card) => {
+            const toggle = card.querySelector(".exp-toggle");
+
+            toggle.addEventListener("click", (e) => {
+                e.stopPropagation();
+                this.toggleCard(card);
+            });
+
+            // Also allow clicking the whole card to expand
+            card.addEventListener("click", () => {
+                this.toggleCard(card);
+            });
+        });
+    }
+
+    toggleCard(targetCard) {
+        // Toggle current card (don't close others, allow multiple open)
+        targetCard.classList.toggle("expanded");
     }
 }
