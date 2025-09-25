@@ -1,8 +1,13 @@
 import { Sketch } from "./sketch.js";
 import { LoadingManager } from "./loading.js";
 import { CustomScrollbar } from "./scrollbar.js";
-import { NavManager, HeaderManager, HeaderColorManager } from "./header.js";
-import { SkipLinkManager, ScrollWords, GlassCardSnap } from "./animations.js";
+import { NavManager, HeaderManager } from "./header.js";
+import {
+    SkipLinkManager,
+    ScrollWords,
+    GlassCardSnap,
+    ExperienceCards,
+} from "./animations.js";
 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -15,11 +20,14 @@ function initializeApp() {
     // Force scroll to top
     window.scrollTo(0, 0);
 
+    const isMobile = /Mobi/i.test(window.navigator.userAgent);
+
     // Initialize ScrollSmoother
     const smoother = ScrollSmoother.create({
         smooth: 1.25,
         effects: true,
         smoothTouch: 0.1,
+        normalizeScroll: isMobile,
         ignoreMobileResize: true,
         // Performance optimizations
         onUpdate: (self) => {
@@ -49,12 +57,12 @@ function initializeApp() {
         new CustomScrollbar();
         new NavManager();
         new HeaderManager();
-        new HeaderColorManager();
         new SkipLinkManager();
 
         // Initialize animations with staggered loading
         setTimeout(() => new ScrollWords(), 50);
-        setTimeout(() => new GlassCardSnap(), 150);
+        setTimeout(() => new GlassCardSnap(), 100);
+        setTimeout(() => new ExperienceCards(), 150);
 
         // Make smoother globally accessible
         window.scrollSmoother = smoother;
@@ -66,6 +74,7 @@ function initializeApp() {
     function initThreeJsContainers() {
         const heroContainer = document.getElementById("hero-three-container");
         const aboutContainer = document.getElementById("about-three-container");
+        const expContainer = document.getElementById("exp-three-container");
 
         // Use Intersection Observer for lazy loading
         const observer = new IntersectionObserver(
@@ -100,6 +109,19 @@ function initializeApp() {
                             target.dataset.initialized = "true";
                         }
 
+                        if (
+                            target.id === "exp-three-container" &&
+                            !target.dataset.initialized
+                        ) {
+                            new Sketch({
+                                dom: target,
+                                section: "exp",
+                                geometryWidth: 4,
+                                geometryHeight: 4,
+                            });
+                            target.dataset.initialized = "true";
+                        }
+
                         observer.unobserve(target);
                     }
                 });
@@ -109,6 +131,7 @@ function initializeApp() {
 
         if (heroContainer) observer.observe(heroContainer);
         if (aboutContainer) observer.observe(aboutContainer);
+        if (expContainer) observer.observe(expContainer);
     }
 
     // Development popup functionality

@@ -2,6 +2,7 @@ import * as THREE from "three";
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import fragment from "./shaders/fragment.glsl";
 import aboutfragment from "./shaders/aboutfragment.glsl";
+import expfragment from "./shaders/expfragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -19,13 +20,14 @@ const colors = [
 const fragmentShaders = {
     hero: fragment,
     about: aboutfragment,
+    exp: expfragment,
     // Add more sections as needed
 };
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export class Sketch {
     /**
-     * @param {Object} options - Configuration options
+     * @param {{dom: Element, section: string, geometryWidth: number, geometryHeight: number}} options - Configuration options
      * @param {HTMLElement} options.dom - The container DOM element for rendering
      * @param {string} options.section - The section name to determine which fragment shader to use
      * @param {number} options.geometryWidth - The width of the plane geometry
@@ -98,7 +100,7 @@ export class Sketch {
             }
         });
 
-        window.addEventListener('resize', () => this.onWindowResize());
+        window.addEventListener("resize", () => this.onWindowResize());
     }
 
     onWindowResize() {
@@ -118,8 +120,15 @@ export class Sketch {
         const width = height * this.camera.aspect;
 
         this.geometry.dispose();
-        this.geometry = new THREE.PlaneGeometry(width, this.geometryHeight, 1, 1);
+        this.geometry = new THREE.PlaneGeometry(
+            width,
+            this.geometryHeight,
+            1,
+            1
+        );
         this.plane.geometry = this.geometry;
+
+        this.material.uniforms.vw.value = this.width;
     }
 
     // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
@@ -150,6 +159,7 @@ export class Sketch {
                 uColor: { value: this.palette },
                 mouse: { value: new THREE.Vector2(0, 0) },
                 opacity: { value: 0 },
+                vw: { value: this.width },
             },
             vertexShader: vertex,
             fragmentShader: selectedFragment,
