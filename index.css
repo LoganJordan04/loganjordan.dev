@@ -17,6 +17,8 @@
     /*--spacing-lg: 1.25em;*/
     /*--spacing-xl: 1.875em;*/
     --spacing-xxl: 3.125em;
+
+    --power2-out: cubic-bezier(.2, .5, .3, 1);
 }
 
 *,
@@ -349,6 +351,10 @@ body.loading-active .custom-scrollbar {
 .project-title {
     font-family: var(--font-heading);
     font-size: 1.25rem;
+}
+
+.exp-header {
+    font-size: clamp(4rem, 12vw, 9.375rem);
 }
 
 .exp-title {
@@ -842,8 +848,8 @@ body.loading-active .custom-scrollbar {
 }
 
 .exp-container {
+    margin-top: clamp(24vh, 25vw, 20rem);
     position: absolute;
-    top: 20rem;
     left: 50%;
     transform: translate(-50%, -50%);
     width: min(90vw, 700px);
@@ -856,10 +862,11 @@ body.loading-active .custom-scrollbar {
     width: 100%;
 }
 
-.exp-card, .exp-details-card {
+.exp-card,
+.exp-details-card {
     padding: 1.25rem 2rem;
     border-radius: 10px;
-    transition: all 0.5s ease;
+    transition: all 0.8s var(--power2-out);
     overflow: hidden;
     inset: 0;
     background-color: rgba(245, 245, 245, 0.1);
@@ -878,6 +885,12 @@ body.loading-active .custom-scrollbar {
     cursor: pointer;
 }
 
+.exp-card:hover,
+.exp-card.expanded:hover {
+    transform: scale(1.01);
+    background-color: rgba(245, 245, 245, 0.2);
+}
+
 .exp-details-card {
     position: absolute;
     top: 100%;
@@ -888,49 +901,56 @@ body.loading-active .custom-scrollbar {
     align-items: center;
     gap: 3.125rem;
     background-color: rgba(245, 245, 245, 0.05);
-    max-height: 0;
     opacity: 0;
     margin-top: 0;
-    transition: all 0.5s ease;
+    transition: all 0.8s var(--power2-out);
     z-index: 1;
+    clip-path: inset(0 0 100% 0);
 }
 
 .exp-card.expanded + .exp-details-card {
-    max-height: 300px;
     opacity: 1;
     margin-top: 0.625rem;
+    clip-path: inset(0 0 0% 0);
 }
 
 .exp-card.expanded {
     background-color: rgba(245, 245, 245, 0.15);
 }
 
-/*.exp-card:hover {*/
-/*    transform: translateY(-2px);*/
-/*    box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);*/
-/*}*/
-
-.exp-card-inner, .exp-card-inner-details {
+.exp-card-inner,
+.exp-card-inner-details {
     height: 100%;
-    transition: all 0.5s ease;
+    transition: all 0.8s var(--power2-out);
 }
 
 .exp-card-header {
     display: flex;
     width: 100%;
     justify-content: space-between;
+    align-items: center;
 }
 
-.exp-left {
+.exp-info {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+    flex: 1;
+}
+
+.exp-date-mobile {
+    display: none;
+}
+
+.exp-date-desktop {
+    display: block;
 }
 
 .exp-right {
     display: flex;
     align-items: center;
     gap: 1.875rem;
+    flex-shrink: 0;
 }
 
 .exp-toggle {
@@ -941,13 +961,14 @@ body.loading-active .custom-scrollbar {
     background: transparent;
 }
 
-.exp-toggle span:nth-child(1), span:nth-child(2) {
+.exp-toggle span:nth-child(1),
+span:nth-child(2) {
     position: absolute;
     width: 100%;
     height: 2px;
     border-radius: 10px;
     background: var(--secondary-white);
-    transition: all 0.5s ease;
+    transition: all 0.8s var(--power2-out);
 }
 
 .exp-toggle span:nth-child(1) {
@@ -963,6 +984,7 @@ body.loading-active .custom-scrollbar {
 
 .exp-card.expanded .exp-toggle span:nth-child(2) {
     transform: rotate(-90deg);
+    opacity: 0.4;
 }
 
 .exp-inner-header {
@@ -972,7 +994,8 @@ body.loading-active .custom-scrollbar {
     margin-bottom: 1rem;
 }
 
-.exp-location, .exp-link {
+.exp-location,
+.exp-link {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1062,6 +1085,7 @@ body.loading-active .custom-scrollbar {
         height: 360vh;
     }
 
+    /* Skills */
     .skills-sub {
         padding: 0;
         font-size: clamp(3.75rem, 7.9vw, 6.25rem);
@@ -1093,6 +1117,33 @@ body.loading-active .custom-scrollbar {
         margin: auto 0 1rem 0;
         padding: 0 15vw;
     }
+
+    /* Experience */
+    #exp-three-container {
+        height: 90vh;
+    }
+    
+    .exp-date-mobile {
+        display: block;
+    }
+
+    .exp-date-desktop {
+        display: none;
+    }
+
+    .exp-details-card {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .exp-icon {
+        order: -1;
+    }
+
+    .exp-inner-header,
+    .exp-skills {
+        justify-content: center;
+    }
 }
 
 /* Mobile */
@@ -1101,6 +1152,7 @@ body.loading-active .custom-scrollbar {
         height: 390vh;
     }
 
+    /* Skills */
     .skill-row {
         gap: 0;
     }
@@ -1113,6 +1165,11 @@ body.loading-active .custom-scrollbar {
         height: 2.5rem;
     }
 
+    /* Work */
+    #exp-three-container {
+        height: 100vh;
+    }
+    
     .work-header {
         font-size: 5rem;
     }
