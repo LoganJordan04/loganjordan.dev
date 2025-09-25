@@ -113,11 +113,11 @@ function initializeApp() {
                             target.id === "exp-three-container" &&
                             !target.dataset.initialized
                         ) {
-                            window.aboutSketch = new Sketch({
+                            new Sketch({
                                 dom: target,
                                 section: "exp",
                                 geometryWidth: 4,
-                                geometryHeight: 2,
+                                geometryHeight: 4,
                             });
                             target.dataset.initialized = "true";
                         }
