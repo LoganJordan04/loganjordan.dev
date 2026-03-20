@@ -1,10 +1,6 @@
 import * as THREE from "three";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
-import { GrainShader } from "./shaders/GrainShader.js";
 
 // Define color palettes
 const colors = [
@@ -15,17 +11,33 @@ const colors = [
 
 // Main Sketch class for rendering a Three.js scene with custom shaders and postprocessing.
 export class Sketch {
-    constructor(options) {
-        // Create the scene
-        this.scene = new THREE.Scene();
+    static instances = new Set();
+    static activeSketch = null;
 
-        // Set up renderer and append to container
+    constructor(options) {
+        this.scene = new THREE.Scene();
         this.container = options.dom;
         this.section = options.section;
         this.geometryWidth = options.geometryWidth;
         this.geometryHeight = options.geometryHeight;
+        this.pointerTarget =
+            options.pointerTarget || this.container.parentElement || this.container;
+        this.qualityProfile = this.getQualityProfile();
         this.width = this.container.offsetWidth;
         this.height = this.container.offsetHeight;
+        this.rafId = null;
+        this.resizeTimeout = null;
+        this.lastFrameTimestamp = 0;
+        this.visibilityState = {
+            isIntersecting: false,
+            intersectionRatio: 0,
+            distanceToViewportCenter: Number.POSITIVE_INFINITY,
+        };
+        this.render = this.render.bind(this);
+        this.scheduleResize = this.scheduleResize.bind(this);
+        this.handleResize = this.handleResize.bind(this);
+        this.refreshVisibilityState = this.refreshVisibilityState.bind(this);
+
         this.renderer = new THREE.WebGLRenderer({
             antialias: false,
             alpha: true,
@@ -38,16 +50,16 @@ export class Sketch {
             precision: "mediump",
         });
 
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.basePixelRatio = this.getTargetPixelRatio();
+        this.currentPixelRatio = this.basePixelRatio;
+        this.renderer.setPixelRatio(this.currentPixelRatio);
         this.renderer.setSize(this.width, this.height);
         this.renderer.setClearColor(0x0a0a0a, 1);
         this.renderer.physicallyCorrectLights = true;
-        this.renderer.outputEncoding = THREE.SRGBColorSpace;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.shadowMap.enabled = false;
         this.renderer.sortObjects = false;
-        this.renderer.info.autoReset = false;
 
-        // Force WebGL canvas to render on pixel boundaries
         const canvas = this.renderer.domElement;
         Object.assign(canvas.style, {
             display: "block",
@@ -63,7 +75,6 @@ export class Sketch {
 
         this.container.appendChild(canvas);
 
-        // Set up camera
         this.camera = new THREE.PerspectiveCamera(
             70,
             this.width / this.height,
@@ -72,32 +83,22 @@ export class Sketch {
         );
         this.camera.position.set(0, 0, 1.3);
 
-        // Initialize clock and time tracking
-        this.clock = new THREE.Clock();
         this.time = 0;
+        this.isPlaying = false;
 
-        this.isPlaying = true;
-
-        // Select a random palette and convert to THREE.Color
         this.palette = colors[Math.floor(Math.random() * colors.length)].map(
             (color) => new THREE.Color(color)
         );
 
-        // Performance monitoring and adaptive quality
         this.performanceMonitor = {
             frameTime: 0,
             lastTime: performance.now(),
             adaptiveQuality: true,
-            targetFPS: 60,
-            lowQualityThreshold: 30,
+            targetFPS: this.qualityProfile.targetFPS,
+            lowQualityThreshold: this.qualityProfile.lowQualityThreshold,
         };
 
-        // Initialize scene objects, postprocessing, and event listeners
         this.addObjects();
-        this.initPost();
-        this.render();
-
-        // Mouse movement event to update shader uniform
         this.mouseMoveThrottled = this.throttle((e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
@@ -112,9 +113,21 @@ export class Sketch {
             }
         }, 16); // ~60fps throttling
 
-        document.addEventListener("mousemove", this.mouseMoveThrottled);
+        // Listen on the surrounding section wrapper so text layered above the canvas
+        // still drives the shader, while coordinates remain relative to the canvas.
+        this.pointerTarget.addEventListener("pointermove", this.mouseMoveThrottled, {
+            passive: true,
+        });
 
+        this.resizeObserver = new ResizeObserver(() => this.scheduleResize());
+        this.resizeObserver.observe(this.container);
+        window.addEventListener("resize", this.scheduleResize, {
+            passive: true,
+        });
+
+        Sketch.instances.add(this);
         this.setupCulling();
+        Sketch.refreshActiveSketch();
     }
 
     throttle(func, limit) {
@@ -130,20 +143,88 @@ export class Sketch {
         };
     }
 
-    // Initialize postprocessing pipeline with EffectComposer and custom shader passes.
-    initPost() {
-        this.composer = new EffectComposer(this.renderer);
-        this.composer.addPass(new RenderPass(this.scene, this.camera));
+    getQualityProfile() {
+        const isMobile =
+            window.matchMedia("(max-width: 768px)").matches ||
+            /Mobi|Android|iPhone|iPad/i.test(window.navigator.userAgent);
 
-        // Add grain shader as a postprocessing effect
-        const effect1 = new ShaderPass(GrainShader);
-        effect1.uniforms["scale"].value = 4;
-        this.composer.addPass(effect1);
+        const profiles = {
+            hero: {
+                maxPixelRatio: isMobile ? 0.9 : 1.1,
+                maxRenderPixels: isMobile ? 850000 : 1800000,
+                targetFPS: isMobile ? 30 : 45,
+                lowQualityFactor: 0.8,
+            },
+            about: {
+                maxPixelRatio: isMobile ? 0.75 : 0.9,
+                maxRenderPixels: isMobile ? 650000 : 1200000,
+                targetFPS: 30,
+                lowQualityFactor: 0.75,
+            },
+            exp: {
+                maxPixelRatio: isMobile ? 0.8 : 1.0,
+                maxRenderPixels: isMobile ? 750000 : 1400000,
+                targetFPS: isMobile ? 30 : 36,
+                lowQualityFactor: 0.8,
+            },
+        };
+
+        const profile = profiles[this.section] || {
+            maxPixelRatio: isMobile ? 0.85 : 1.0,
+            maxRenderPixels: isMobile ? 800000 : 1500000,
+            targetFPS: isMobile ? 30 : 40,
+            lowQualityFactor: 0.8,
+        };
+
+        return {
+            ...profile,
+            lowQualityThreshold: Math.max(18, profile.targetFPS * 0.65),
+        };
     }
 
-    // Add objects (geometry and material) to the scene.
+    getTargetPixelRatio(multiplier = 1) {
+        const maxDeviceRatio = Math.min(
+            window.devicePixelRatio,
+            this.qualityProfile.maxPixelRatio
+        );
+        const desiredRatio = maxDeviceRatio * multiplier;
+        const pixelBudgetRatio = Math.sqrt(
+            this.qualityProfile.maxRenderPixels /
+                Math.max(1, this.width * this.height)
+        );
+
+        return Math.max(0.5, Math.min(desiredRatio, pixelBudgetRatio));
+    }
+
+    refreshVisibilityState() {
+        const rect = this.container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+        const visibleWidth =
+            Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0));
+        const visibleHeight =
+            Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
+        const visibleArea = visibleWidth * visibleHeight;
+        const totalArea = Math.max(1, rect.width * rect.height);
+        const viewportCenter = viewportHeight / 2;
+        const elementCenter = rect.top + rect.height / 2;
+
+        this.visibilityState = {
+            isIntersecting: visibleArea > 0,
+            intersectionRatio: Math.min(1, visibleArea / totalArea),
+            distanceToViewportCenter: Math.abs(elementCenter - viewportCenter),
+        };
+    }
+
+    scheduleResize() {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+            this.handleResize();
+        }, 80);
+    }
+
     addObjects() {
-        // Determine shader defines based on section
         const defines = {};
         if (this.section === "hero") defines.HERO_SECTION = "";
         if (this.section === "about") defines.ABOUT_SECTION = "";
@@ -153,7 +234,7 @@ export class Sketch {
             extensions: {
                 derivatives: "#extension GL_OES_standard_derivatives : enable",
             },
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide,
             defines: defines,
             uniforms: {
                 time: { value: 0 },
@@ -171,124 +252,259 @@ export class Sketch {
             fog: false,
         });
 
-        // Calculate geometry width based on screen width and camera parameters
-        const distance = this.camera.position.z;
-        const fov = this.camera.fov * (Math.PI / 180);
-        const height = 2 * Math.tan(fov / 2) * distance;
-        const width = height * this.camera.aspect;
-
-        // Use BufferGeometry directly instead of PlaneGeometry
-        const vertices = new Float32Array([
-            -width / 2,
-            -this.geometryHeight / 2,
-            0,
-            width / 2,
-            -this.geometryHeight / 2,
-            0,
-            width / 2,
-            this.geometryHeight / 2,
-            0,
-            -width / 2,
-            this.geometryHeight / 2,
-            0,
-        ]);
+        const vertices = new Float32Array(12);
         const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
         const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
 
         this.geometry = new THREE.BufferGeometry();
-        this.geometry.setAttribute(
-            "position",
-            new THREE.BufferAttribute(vertices, 3)
-        );
+        this.positionAttribute = new THREE.BufferAttribute(vertices, 3);
+        this.geometry.setAttribute("position", this.positionAttribute);
         this.geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
         this.geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        this.updatePlaneGeometry();
         this.plane = new THREE.Mesh(this.geometry, this.material);
         this.scene.add(this.plane);
     }
 
-    // Adjust opacity in the about section
+    updatePlaneGeometry() {
+        const distance = this.camera.position.z;
+        const fov = this.camera.fov * (Math.PI / 180);
+        const visibleHeight = 2 * Math.tan(fov / 2) * distance;
+        const visibleWidth = visibleHeight * this.camera.aspect;
+        const halfWidth = visibleWidth / 2;
+        const halfHeight = this.geometryHeight / 2;
+        const positions = this.positionAttribute.array;
+
+        positions[0] = -halfWidth;
+        positions[1] = -halfHeight;
+        positions[2] = 0;
+        positions[3] = halfWidth;
+        positions[4] = -halfHeight;
+        positions[5] = 0;
+        positions[6] = halfWidth;
+        positions[7] = halfHeight;
+        positions[8] = 0;
+        positions[9] = -halfWidth;
+        positions[10] = halfHeight;
+        positions[11] = 0;
+
+        this.positionAttribute.needsUpdate = true;
+        this.geometry.computeBoundingBox();
+        this.geometry.computeBoundingSphere();
+    }
+
     updateOpacity(opacityValue) {
         if (this.material && this.material.uniforms.opacity) {
             this.material.uniforms.opacity.value = opacityValue;
         }
     }
 
-    // Visibility-based performance management
+    updateRenderPixelRatio(nextPixelRatio) {
+        if (Math.abs(nextPixelRatio - this.currentPixelRatio) < 0.01) {
+            return;
+        }
+
+        // Resize the composer only when quality mode actually changes.
+        this.currentPixelRatio = nextPixelRatio;
+        this.renderer.setPixelRatio(nextPixelRatio);
+        this.renderer.setSize(this.width, this.height, false);
+    }
+
+    handleResize() {
+        const nextWidth = this.container.offsetWidth;
+        const nextHeight = this.container.offsetHeight;
+
+        if (!nextWidth || !nextHeight) {
+            return;
+        }
+
+        this.width = nextWidth;
+        this.height = nextHeight;
+        this.qualityProfile = this.getQualityProfile();
+        this.performanceMonitor.targetFPS = this.qualityProfile.targetFPS;
+        this.performanceMonitor.lowQualityThreshold =
+            this.qualityProfile.lowQualityThreshold;
+        this.basePixelRatio = this.getTargetPixelRatio();
+
+        // Keep the scene plane and post-processing buffers aligned with layout changes.
+        this.camera.aspect = this.width / this.height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(this.width, this.height, false);
+        this.material.uniforms.vw.value = this.width;
+        this.updatePlaneGeometry();
+        this.updateRenderPixelRatio(this.basePixelRatio);
+        this.refreshVisibilityState();
+        Sketch.refreshActiveSketch();
+    }
+
+    startRendering() {
+        if (!this.isPlaying || this.rafId !== null) {
+            return;
+        }
+
+        // Prime the frame timer so resuming from a paused tab does not cause a large time jump.
+        this.performanceMonitor.lastTime = performance.now();
+        this.lastFrameTimestamp = 0;
+        this.rafId = requestAnimationFrame(this.render);
+    }
+
+    stopRendering() {
+        this.isPlaying = false;
+
+        if (this.rafId !== null) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+    }
+
+    activate() {
+        this.isPlaying = true;
+        this.startRendering();
+    }
+
+    deactivate() {
+        this.stopRendering();
+    }
+
+    getSelectionScore() {
+        const sectionPriority = {
+            hero: 3,
+            about: 2,
+            exp: 1,
+        };
+
+        return (
+            this.visibilityState.intersectionRatio * 1000 -
+            this.visibilityState.distanceToViewportCenter +
+            (sectionPriority[this.section] || 0)
+        );
+    }
+
+    static refreshActiveSketch() {
+        let nextActiveSketch = null;
+        let bestScore = Number.NEGATIVE_INFINITY;
+
+        this.instances.forEach((sketch) => {
+            if (!sketch.visibilityState.isIntersecting) {
+                sketch.deactivate();
+                return;
+            }
+
+            const score = sketch.getSelectionScore();
+            if (score > bestScore) {
+                bestScore = score;
+                nextActiveSketch = sketch;
+            }
+        });
+
+        this.instances.forEach((sketch) => {
+            if (sketch !== nextActiveSketch) {
+                sketch.deactivate();
+            }
+        });
+
+        this.activeSketch = nextActiveSketch;
+        this.activeSketch?.activate();
+    }
+
     setupCulling() {
-        // Intersection Observer for visibility-based rendering
         this.visibilityObserver = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.target === this.container) {
-                        if (entry.isIntersecting) {
-                            this.isPlaying = true;
-                            this.render(); // Resume rendering
-                        } else {
-                            this.isPlaying = false; // Pause when not visible
-                        }
+                        this.refreshVisibilityState();
+                        Sketch.refreshActiveSketch();
                     }
                 });
             },
             {
-                rootMargin: "50px", // Start rendering 50px before becoming visible
+                rootMargin: "50px",
+                threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
             }
         );
 
         this.visibilityObserver.observe(this.container);
+        this.refreshVisibilityState();
     }
 
-    // Main render loop. Updates uniforms and renders the scene.
-    render() {
-        if (!this.isPlaying) return;
+    render(timestamp) {
+        if (!this.isPlaying) {
+            this.rafId = null;
+            return;
+        }
 
+        this.rafId = requestAnimationFrame(this.render);
+
+        const frameInterval = 1000 / this.qualityProfile.targetFPS;
+        if (
+            this.lastFrameTimestamp &&
+            timestamp - this.lastFrameTimestamp < frameInterval
+        ) {
+            return;
+        }
+
+        const elapsedMs = this.lastFrameTimestamp
+            ? timestamp - this.lastFrameTimestamp
+            : frameInterval;
+        this.lastFrameTimestamp = timestamp;
         const currentTime = performance.now();
-        let delta = this.clock.getDelta();
-        delta = Math.min(delta, 1 / 30);
+        const delta = Math.min(elapsedMs / 1000, 1 / 30);
 
-        // Performance monitoring
         this.performanceMonitor.frameTime =
             currentTime - this.performanceMonitor.lastTime;
         const currentFPS = 1000 / this.performanceMonitor.frameTime;
 
-        // Adaptive quality based on performance
         if (this.performanceMonitor.adaptiveQuality) {
             if (currentFPS < this.performanceMonitor.lowQualityThreshold) {
-                // Reduce quality
-                this.renderer.setPixelRatio(
-                    Math.min(window.devicePixelRatio * 0.5, 1)
+                this.updateRenderPixelRatio(
+                    this.getTargetPixelRatio(
+                        this.qualityProfile.lowQualityFactor
+                    )
                 );
             } else if (currentFPS > this.performanceMonitor.targetFPS * 0.9) {
-                // Restore quality
-                this.renderer.setPixelRatio(
-                    Math.min(window.devicePixelRatio, 2)
-                );
+                this.updateRenderPixelRatio(this.basePixelRatio);
             }
         }
 
         this.time += delta;
         this.material.uniforms.time.value = this.time;
         this.performanceMonitor.lastTime = currentTime;
-        requestAnimationFrame(this.render.bind(this));
-        this.composer.render(this.scene, this.camera);
-
-        // Manual reset for performance info
-        this.renderer.info.reset();
+        this.renderer.render(this.scene, this.camera);
     }
 
     dispose() {
+        this.stopRendering();
+        Sketch.instances.delete(this);
+
+        if (Sketch.activeSketch === this) {
+            Sketch.activeSketch = null;
+        }
+
         if (this.visibilityObserver) {
             this.visibilityObserver.disconnect();
         }
 
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
+
+        clearTimeout(this.resizeTimeout);
+
         this.geometry.dispose();
         this.material.dispose();
         this.renderer.dispose();
-        this.composer.dispose();
 
-        document.removeEventListener("mousemove", this.mouseMoveThrottled);
+        this.pointerTarget.removeEventListener(
+            "pointermove",
+            this.mouseMoveThrottled
+        );
+        window.removeEventListener("resize", this.scheduleResize);
 
         if (this.container.contains(this.renderer.domElement)) {
             this.container.removeChild(this.renderer.domElement);
         }
+
+        Sketch.refreshActiveSketch();
     }
 }

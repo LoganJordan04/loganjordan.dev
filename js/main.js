@@ -228,22 +228,12 @@ function initializeApp() {
         // Cleanup on visibility change (when tab becomes hidden)
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
-                // Pause all sketches when tab is hidden
                 sketchInstances.forEach((sketch) => {
-                    if (sketch && sketch.isPlaying !== undefined) {
-                        sketch.isPlaying = false;
-                    }
+                    sketch?.deactivate?.();
                 });
             } else {
-                // Resume sketches when tab becomes visible
-                sketchInstances.forEach((sketch) => {
-                    if (sketch && sketch.isPlaying !== undefined) {
-                        sketch.isPlaying = true;
-                        if (sketch.render) {
-                            sketch.render();
-                        }
-                    }
-                });
+                // Let Sketch choose a single active renderer when the tab resumes.
+                Sketch.refreshActiveSketch();
             }
         });
 

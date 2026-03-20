@@ -123,6 +123,7 @@ export class ScrollWords {
         this.scrollTriggers = [];
         this.splitTexts = [];
         this.isConverging = false;
+        this.handleResize = this.handleResize.bind(this);
         this.init();
     }
 
