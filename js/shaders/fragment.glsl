@@ -134,6 +134,7 @@ void main() {
     // Hero section implementation
     vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.03);
     float n = cnoise(noiseInput);
+    // float n = cnoise(noiseInput) + 1231231.; // Woah
 
     vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;
 

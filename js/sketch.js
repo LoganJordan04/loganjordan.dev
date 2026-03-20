@@ -4,7 +4,11 @@ import vertex from "./shaders/vertex.glsl";
 
 // Define color palettes
 const colors = [
-    ["#2d55bd", "#f6ead2", "#f55809"],
+    ["#34a9a9", "#f6ead2", "#86b186"],
+    // ["#5c8b5c", "#f1e9d7", "#f08b4c"],
+
+
+    // ["#2d55bd", "#f6ead2", "#f55809"],
     // ["#9359c7", "#b2ecc0", "#5069e3"],
     // ["#226798", "#43bd8f", "#dcfadf"],
 ];
