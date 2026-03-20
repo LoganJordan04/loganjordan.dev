@@ -99,6 +99,7 @@ export class Sketch {
         };
 
         this.addObjects();
+        this.updateResolutionUniform();
         this.mouseMoveThrottled = this.throttle((e) => {
             const rect = this.container.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
@@ -194,6 +195,28 @@ export class Sketch {
         );
 
         return Math.max(0.5, Math.min(desiredRatio, pixelBudgetRatio));
+    }
+
+    updateResolutionUniform() {
+        if (!this.material?.uniforms?.resolution) {
+            return;
+        }
+
+        const renderWidth = Math.max(
+            1,
+            Math.round(this.width * this.currentPixelRatio)
+        );
+        const renderHeight = Math.max(
+            1,
+            Math.round(this.height * this.currentPixelRatio)
+        );
+
+        this.material.uniforms.resolution.value.set(
+            renderWidth,
+            renderHeight,
+            this.currentPixelRatio,
+            1
+        );
     }
 
     refreshVisibilityState() {
@@ -308,6 +331,7 @@ export class Sketch {
         this.currentPixelRatio = nextPixelRatio;
         this.renderer.setPixelRatio(nextPixelRatio);
         this.renderer.setSize(this.width, this.height, false);
+        this.updateResolutionUniform();
     }
 
     handleResize() {
@@ -334,6 +358,7 @@ export class Sketch {
         this.material.uniforms.vw.value = this.width;
         this.updatePlaneGeometry();
         this.updateRenderPixelRatio(this.basePixelRatio);
+        this.updateResolutionUniform();
         this.refreshVisibilityState();
         Sketch.refreshActiveSketch();
     }
