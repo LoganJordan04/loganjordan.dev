@@ -157,7 +157,7 @@ body.loading-active .custom-scrollbar {
 }
 
 #loading-animation {
-    width: min(130vw, 1080px);
+    width: min(35vw, 280px);
     height: auto;
     opacity: 1;
     transition: opacity 0.3s ease-out;
