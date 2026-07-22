@@ -120,9 +120,13 @@ export class ScrollWords {
     constructor(options = {}) {
         this.wordSpacing = options.wordSpacing || "clamp(25px, 8vw, 50px)";
         this.animations = [];
+        this.scrollingLines = [];
+        this.isMarqueeVisible = true;
         this.scrollTriggers = [];
         this.splitTexts = [];
         this.isConverging = false;
+        this.viewportWidth = window.innerWidth;
+        this.handleResize = this.handleResize.bind(this);
         this.init();
     }
 
@@ -131,11 +135,13 @@ export class ScrollWords {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
                 this.setupScrolling();
+                this.setupMarqueeVisibilityObserver();
                 this.setupConvergeAnimation();
                 this.setupResizeHandler();
             });
         } else {
             this.setupScrolling();
+            this.setupMarqueeVisibilityObserver();
             this.setupConvergeAnimation();
             this.setupResizeHandler();
         }
@@ -150,7 +156,13 @@ export class ScrollWords {
             clearTimeout(this.resizeTimeout);
         }
         this.resizeTimeout = setTimeout(() => {
-            this.refreshScrollTriggers();
+            if (this.viewportWidth !== window.innerWidth) {
+                this.viewportWidth = window.innerWidth;
+                this.rebuildScrolling();
+            }
+
+            this.computedValues = null;
+            requestAnimationFrame(() => this.refreshScrollTriggers());
         }, 150);
     }
 
@@ -165,6 +177,33 @@ export class ScrollWords {
 
         words.forEach((word, index) => {
             this.createInfiniteScroll(word, index);
+        });
+    }
+
+    setupMarqueeVisibilityObserver() {
+        const wordsContainer = document.querySelector(".words-container");
+
+        if (!wordsContainer || !window.IntersectionObserver) return;
+
+        this.marqueeObserver = new IntersectionObserver(
+            ([entry]) => {
+                this.setMarqueeVisibility(entry.isIntersecting);
+            },
+            { rootMargin: "150px 0px" }
+        );
+        this.marqueeObserver.observe(wordsContainer);
+    }
+
+    setMarqueeVisibility(isVisible) {
+        if (this.isMarqueeVisible === isVisible) return;
+
+        this.isMarqueeVisible = isVisible;
+        this.animations.forEach((timeline) => {
+            if (isVisible) {
+                timeline.play();
+            } else {
+                timeline.pause();
+            }
         });
     }
 
@@ -201,43 +240,51 @@ export class ScrollWords {
             el.style.whiteSpace = "nowrap";
         });
 
-        // Calculate responsive word spacing
-        const getResponsiveSpacing = () => {
-            const vw = window.innerWidth / 100;
-            return Math.max(25, Math.min(8 * vw, 50));
-        };
+        const scrollingLine = { allElements, element, index, timeline: null };
+        this.scrollingLines.push(scrollingLine);
+        this.createInfiniteScrollTimeline(scrollingLine);
+    }
 
-        // Get the actual text width after positioning
-        const textWidth = element.offsetWidth;
-        const spacing = getResponsiveSpacing();
-        const totalDistance = textWidth + spacing;
+    createInfiniteScrollTimeline(scrollingLine) {
+        const { allElements, element, index } = scrollingLine;
+        const previousProgress = scrollingLine.timeline?.progress() || 0;
+        const wasPaused =
+            scrollingLine.timeline?.paused() ?? !this.isMarqueeVisible;
 
-        // Position all elements initially
-        allElements.forEach((el, i) => {
-            gsap.set(el, { x: i * totalDistance });
+        scrollingLine.timeline?.kill();
+
+        const spacing = Math.max(25, Math.min(window.innerWidth * 0.08, 50));
+        const totalDistance = element.offsetWidth + spacing;
+        const speeds = [30, 35, 25, 40, 20];
+        const duration = totalDistance / (speeds[index] || 30);
+
+        allElements.forEach((el, elementIndex) => {
+            gsap.set(el, { x: elementIndex * totalDistance });
         });
 
-        // Different speeds for visual interest
-        const speeds = [30, 35, 25, 40, 20]; // pixels per second
-        const speed = speeds[index] || 30;
-        const duration = totalDistance / speed;
-
-        // Create seamless infinite loop with spacing
-        const tl = gsap.timeline({ repeat: -1 });
-        tl.fromTo(
+        const timeline = gsap.timeline({ repeat: -1, paused: wasPaused });
+        timeline.fromTo(
             allElements,
             {
-                x: (i) => i * totalDistance,
+                x: (elementIndex) => elementIndex * totalDistance,
             },
             {
-                x: (i) => i * totalDistance - totalDistance,
-                duration: duration,
+                x: (elementIndex) =>
+                    elementIndex * totalDistance - totalDistance,
+                duration,
                 ease: "none",
             }
         );
 
-        // Store animation for cleanup
-        this.animations.push(tl);
+        timeline.progress(previousProgress);
+        scrollingLine.timeline = timeline;
+        this.animations[index] = timeline;
+    }
+
+    rebuildScrolling() {
+        this.scrollingLines.forEach((scrollingLine) => {
+            this.createInfiniteScrollTimeline(scrollingLine);
+        });
     }
 
     setupConvergeAnimation() {

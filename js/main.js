@@ -21,6 +21,7 @@ function initializeApp() {
     window.scrollTo(0, 0);
 
     const isMobile = /Mobi/i.test(window.navigator.userAgent);
+    let scrollQuality = "optimizeQuality";
 
     // Initialize ScrollSmoother
     const smoother = ScrollSmoother.create({
@@ -30,16 +31,14 @@ function initializeApp() {
         normalizeScroll: isMobile,
         ignoreMobileResize: true,
         onUpdate: (self) => {
-            if (self.getVelocity() > 100) {
-                // Reduce quality during fast scrolling
+            const nextScrollQuality =
+                self.getVelocity() > 100 ? "optimizeSpeed" : "optimizeQuality";
+
+            if (nextScrollQuality !== scrollQuality) {
+                scrollQuality = nextScrollQuality;
                 document.documentElement.style.setProperty(
                     "--scroll-quality",
-                    "optimizeSpeed"
-                );
-            } else {
-                document.documentElement.style.setProperty(
-                    "--scroll-quality",
-                    "optimizeQuality"
+                    scrollQuality
                 );
             }
         },
@@ -77,29 +76,11 @@ function initializeApp() {
         // Store sketch instances for cleanup
         const sketchInstances = new Map();
 
-        // Performance monitoring for Three.js instances
-        const performanceMonitor = {
-            activeInstances: 0,
-            maxInstances: isMobile ? 1 : 2, // Limit concurrent instances on mobile
-        };
-
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         const { target } = entry;
-
-                        // Check if we should limit instances for performance
-                        if (
-                            performanceMonitor.activeInstances >=
-                                performanceMonitor.maxInstances &&
-                            isMobile
-                        ) {
-                            console.log(
-                                "Delaying Three.js initialization for performance"
-                            );
-                            return;
-                        }
 
                         if (
                             target.id === "hero-three-container" &&
@@ -114,7 +95,6 @@ function initializeApp() {
                                 });
                                 sketchInstances.set(target.id, sketch);
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 // Add error handling for sketch initialization
                                 if (!sketch.renderer) {
@@ -147,7 +127,6 @@ function initializeApp() {
                                     window.aboutSketch
                                 );
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 if (!window.aboutSketch.renderer) {
                                     throw new Error(
@@ -176,7 +155,6 @@ function initializeApp() {
                                 });
                                 sketchInstances.set(target.id, sketch);
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 if (!sketch.renderer) {
                                     throw new Error(
@@ -192,7 +170,9 @@ function initializeApp() {
                             }
                         }
 
-                        observer.unobserve(target);
+                        if (target.dataset.initialized) {
+                            observer.unobserve(target);
+                        }
                     }
                 });
             },
@@ -219,7 +199,6 @@ function initializeApp() {
                 }
             });
             sketchInstances.clear();
-            performanceMonitor.activeInstances = 0;
         };
 
         // Cleanup on page unload
@@ -228,22 +207,12 @@ function initializeApp() {
         // Cleanup on visibility change (when tab becomes hidden)
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
-                // Pause all sketches when tab is hidden
                 sketchInstances.forEach((sketch) => {
-                    if (sketch && sketch.isPlaying !== undefined) {
-                        sketch.isPlaying = false;
-                    }
+                    sketch?.deactivate?.();
                 });
             } else {
-                // Resume sketches when tab becomes visible
-                sketchInstances.forEach((sketch) => {
-                    if (sketch && sketch.isPlaying !== undefined) {
-                        sketch.isPlaying = true;
-                        if (sketch.render) {
-                            sketch.render();
-                        }
-                    }
-                });
+                // Let Sketch choose a single active renderer when the tab resumes.
+                Sketch.refreshActiveSketch();
             }
         });
 
@@ -278,7 +247,13 @@ function initializeApp() {
                                     sketch.dispose();
                                 }
                                 sketchInstances.delete(id);
-                                performanceMonitor.activeInstances--;
+
+                                const container = document.getElementById(id);
+                                if (container) {
+                                    delete container.dataset.initialized;
+                                    delete container.dataset.error;
+                                    observer.observe(container);
+                                }
                             }
                             memoryWarningCount = 0;
                         }

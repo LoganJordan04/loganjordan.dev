@@ -4,11 +4,8 @@ export class LoadingManager {
         this.loadingContainer = document.getElementById("loading-container");
         this.loadingAnimation = document.getElementById("loading-animation");
         this.isLoaded = false;
-        this.resizeTimeout = null;
 
         this.init();
-        this.setupResize();
-
         this.setupDevSkip();
     }
 
@@ -45,26 +42,6 @@ export class LoadingManager {
                 this.completeLoading();
             }
         });
-    }
-
-    setupResize() {
-        window.addEventListener("resize", () => {
-            clearTimeout(this.resizeTimeout);
-            this.resizeTimeout = setTimeout(() => {
-                this.handleResize();
-            }, 250);
-        });
-    }
-
-    handleResize() {
-        // Store current scroll position
-        const scrollY =
-            window.pageYOffset || document.documentElement.scrollTop;
-        sessionStorage.setItem("scrollPosition", scrollY.toString());
-        sessionStorage.setItem("skipLoading", "true");
-
-        // Refresh the page
-        window.location.reload();
     }
 
     completeLoading() {

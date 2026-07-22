@@ -1,6 +1,7 @@
 uniform float time;
 uniform vec3 uColor[3];
 uniform vec2 mouse;
+uniform vec4 resolution;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -106,9 +107,26 @@ vec3 threeColorGradient(vec3 color1, vec3 color2, vec3 color3, float t) {
     return color1 * weight1 + color2 * weight2 + color3 * weight3;
 }
 
+// This matches the old grain pass, but runs inline so we avoid another fullscreen render.
+float grainRandom(vec2 p) {
+    vec2 k1 = vec2(
+        23.14069263277926,
+        2.665144142690225
+    );
+
+    return fract(cos(dot(p, k1)) * 12345.6789);
+}
+
+vec3 applyGrain(vec3 color) {
+    vec2 uvrandom = gl_FragCoord.xy / resolution.xy;
+    uvrandom.y *= grainRandom(vec2(uvrandom.y, 0.5));
+    return color + grainRandom(uvrandom) * 0.05;
+}
+
 void main() {
     vec3 black = vec3(1.0/255.0);
 
+    // Mouse proximity pushes the noise field forward to create the interactive ripple.
     float dist = distance(vUv, mouse);
     float ripple = exp(-dist * 1.0) * 1.0;
 
@@ -116,6 +134,7 @@ void main() {
     // Hero section implementation
     vec3 noiseInput = vPosition + vec3(0.0, 0.0, ripple) + (time * 0.03);
     float n = cnoise(noiseInput);
+    // float n = cnoise(noiseInput) + 1231231.; // Woah
 
     vec2 baseUV = rotate2D(-0.35 + n) * vPosition.xy * 0.2;
 
@@ -124,6 +143,7 @@ void main() {
 
     vec3 coloredLines = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
     vec3 finalColor = mix(coloredLines, black, secondPattern);
+    finalColor = applyGrain(finalColor);
 
     gl_FragColor = vec4(finalColor, 1.0);
     #endif
@@ -137,6 +157,7 @@ void main() {
     float adjustedOpacity = max(0.0, (opacity - rotationStart) / (1.0 - rotationStart));
     float rotationAmount = adjustedOpacity * 0.3;
 
+    // About gradually rotates the field as the section animation advances.
     vec2 baseUV = rotate2D(n * rotationAmount) * vPosition.xy * 0.2;
 
     float basePattern = smoothstep(0.0, 0.5 + 0.5 * 0.2, 0.5 * abs((baseUV.y * 8.0) + 0.5 * 1.0));
@@ -144,6 +165,7 @@ void main() {
 
     vec3 coloredLine = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
     vec3 finalColor = mix(coloredLine, black, secondPattern);
+    finalColor = applyGrain(finalColor);
 
     gl_FragColor = vec4(finalColor, 1.0);
     #endif
@@ -155,12 +177,14 @@ void main() {
 
     vec2 baseUV = rotate2D(-1.0 + n) * vPosition.xy * 0.2;
 
+    // Keep stripe density visually consistent as the section width changes.
     float frequency = 10240.0 / vw;
     float basePattern = smoothstep(0.0, 0.5 + 0.5 * 0.2, 0.5 * abs((cos(baseUV.y * frequency) + 0.5 * 1.0)));
     float secondPattern = smoothstep(0.0, 0.5 + 0.01 * 0.2, 0.5 * abs((cos(baseUV.y * frequency) + 0.01 * 1.0)));
 
     vec3 coloredLines = threeColorGradient(uColor[0], uColor[1], uColor[2], basePattern);
     vec3 finalColor = mix(coloredLines, black, secondPattern);
+    finalColor = applyGrain(finalColor);
 
     gl_FragColor = vec4(finalColor, 1.0);
     #endif

@@ -1,8 +1,16 @@
 class FxFilter {
     static elements = new WeakMap();
+    static activeElements = new Set();
     static filters = new Map();
     static filterOptions = new Map();
-    static running = false;
+    static pendingElements = new Set();
+    static pendingRoots = new Set();
+    static refreshScheduled = false;
+    static needsFullScan = false;
+    static initialized = false;
+    static filterId = 0;
+    static resizeObserver = null;
+    static mutationObserver = null;
 
     static add(options) {
         if (typeof options === "string") {
@@ -33,73 +41,217 @@ class FxFilter {
             }
         }
 
-        if (!this.running) {
-            this.running = true;
-            this.tick();
+        if (this.initialized) {
+            return;
+        }
+
+        this.initialized = true;
+        this.setupObservers();
+        this.scheduleFullScan();
+
+        window.addEventListener("resize", () => this.scheduleFullScan(), {
+            passive: true,
+        });
+    }
+
+    static setupObservers() {
+        this.resizeObserver = new ResizeObserver((entries) => {
+            entries.forEach(({ target }) => this.scheduleElementRefresh(target));
+        });
+
+        this.mutationObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === "attributes") {
+                    this.scheduleRootRefresh(mutation.target);
+                    return;
+                }
+
+                mutation.addedNodes.forEach((node) =>
+                    this.scheduleRootRefresh(node)
+                );
+                mutation.removedNodes.forEach((node) => this.cleanupNode(node));
+
+                if (mutation.target instanceof Element) {
+                    this.scheduleElementRefresh(mutation.target);
+                }
+            });
+        });
+
+        this.mutationObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["class", "style"],
+        });
+    }
+
+    static scheduleFullScan() {
+        this.needsFullScan = true;
+        this.scheduleRefresh();
+    }
+
+    static scheduleRootRefresh(root) {
+        if (!(root instanceof Element) || this.isFxNode(root)) {
+            return;
+        }
+
+        this.pendingRoots.add(root);
+        this.scheduleRefresh();
+    }
+
+    static scheduleElementRefresh(element) {
+        if (!(element instanceof Element) || this.isFxNode(element)) {
+            return;
+        }
+
+        this.pendingElements.add(element);
+        this.scheduleRefresh();
+    }
+
+    static scheduleRefresh() {
+        if (this.refreshScheduled) {
+            return;
+        }
+
+        // Batch DOM/style work into a single frame even if several observers fire.
+        this.refreshScheduled = true;
+        requestAnimationFrame(() => this.flushRefreshQueue());
+    }
+
+    static flushRefreshQueue() {
+        this.refreshScheduled = false;
+
+        if (this.needsFullScan) {
+            this.needsFullScan = false;
+            this.pendingRoots.clear();
+            this.pendingElements.clear();
+            this.scanSubtree(document.body || document.documentElement);
+            return;
+        }
+
+        const roots = Array.from(this.pendingRoots);
+        const elements = Array.from(this.pendingElements);
+        this.pendingRoots.clear();
+        this.pendingElements.clear();
+
+        roots.forEach((root) => this.scanSubtree(root));
+        elements.forEach((element) => this.refreshElement(element));
+    }
+
+    static scanSubtree(root) {
+        if (!(root instanceof Element)) {
+            return;
+        }
+
+        this.refreshElement(root);
+
+        root.querySelectorAll("*").forEach((element) => {
+            this.refreshElement(element);
+        });
+    }
+
+    static refreshElement(element) {
+        if (!(element instanceof Element) || this.isFxNode(element)) {
+            return;
+        }
+
+        const fxFilter = this.getFxFilterValue(element);
+        const storedState = this.elements.get(element);
+
+        if (!fxFilter) {
+            if (storedState?.hasContainer) {
+                this.removeFxContainer(element, storedState);
+            }
+
+            this.untrackElement(element);
+            return;
+        }
+
+        const parsedFilter =
+            storedState &&
+            storedState.filter === fxFilter &&
+            storedState.parsedFilter
+                ? storedState.parsedFilter
+                : this.parseFilterValue(fxFilter);
+
+        const currentStyles = this.getTrackedStyles(
+            element,
+            fxFilter,
+            parsedFilter
+        );
+
+        const needsRefresh =
+            !storedState ||
+            !storedState.hasContainer ||
+            storedState.filter !== fxFilter ||
+            this.stylesChanged(storedState.trackedStyles, currentStyles);
+
+        if (needsRefresh) {
+            this.removeFxContainer(element, storedState);
+            const nextState = this.addFxContainer(
+                element,
+                fxFilter,
+                parsedFilter,
+                currentStyles
+            );
+
+            if (nextState) {
+                this.trackElement(element, nextState);
+                return;
+            }
+
+            this.trackElement(element, {
+                filter: fxFilter,
+                hasContainer: false,
+                trackedStyles: currentStyles,
+                parsedFilter,
+            });
+            return;
+        }
+
+        this.trackElement(element, {
+            ...storedState,
+            filter: fxFilter,
+            hasContainer: true,
+            trackedStyles: currentStyles,
+            parsedFilter,
+        });
+    }
+
+    static trackElement(element, state) {
+        this.elements.set(element, state);
+
+        if (!this.activeElements.has(element)) {
+            this.activeElements.add(element);
+            this.resizeObserver?.observe(element);
         }
     }
 
-    static tick() {
-        this.scanElements();
-        requestAnimationFrame(() => this.tick());
+    static untrackElement(element) {
+        if (this.activeElements.has(element)) {
+            this.activeElements.delete(element);
+            this.resizeObserver?.unobserve(element);
+        }
+
+        this.elements.delete(element);
     }
 
-    static scanElements() {
-        document
-            .querySelectorAll("*:not(.fx-container):not(svg)")
-            .forEach((element) => {
-                const fxFilter = this.getFxFilterValue(element);
-                const storedState = this.elements.get(element);
+    static cleanupNode(node) {
+        if (!(node instanceof Element)) {
+            return;
+        }
 
-                if (fxFilter) {
-                    let parsedFilter;
-                    if (
-                        storedState &&
-                        storedState.filter === fxFilter &&
-                        storedState.parsedFilter
-                    ) {
-                        parsedFilter = storedState.parsedFilter;
-                    } else {
-                        parsedFilter = this.parseFilterValue(fxFilter);
-                    }
+        this.untrackElement(node);
+        node.querySelectorAll("*").forEach((element) => {
+            this.untrackElement(element);
+        });
+    }
 
-                    const currentStyles = this.getTrackedStyles(
-                        element,
-                        fxFilter,
-                        parsedFilter
-                    );
-
-                    if (!storedState) {
-                        this.addFxContainer(element, fxFilter, parsedFilter);
-                        this.elements.set(element, {
-                            filter: fxFilter,
-                            hasContainer: true,
-                            trackedStyles: currentStyles,
-                            parsedFilter: parsedFilter,
-                        });
-                    } else if (
-                        storedState.filter !== fxFilter ||
-                        this.stylesChanged(
-                            storedState.trackedStyles,
-                            currentStyles
-                        )
-                    ) {
-                        this.removeFxContainer(element);
-                        this.addFxContainer(element, fxFilter, parsedFilter);
-                        this.elements.set(element, {
-                            filter: fxFilter,
-                            hasContainer: true,
-                            trackedStyles: currentStyles,
-                            parsedFilter: parsedFilter,
-                        });
-                    }
-                } else {
-                    if (storedState && storedState.hasContainer) {
-                        this.removeFxContainer(element);
-                        this.elements.delete(element);
-                    }
-                }
-            });
+    static isFxNode(element) {
+        return (
+            element.classList.contains("fx-container") ||
+            element.hasAttribute("data-fx-filter-svg")
+        );
     }
 
     static getFxFilterValue(element) {
@@ -107,12 +259,8 @@ class FxFilter {
         return computed.getPropertyValue("--fx-filter").trim() || null;
     }
 
-    static addFxContainer(element, filterValue, parsedFilter) {
-        if (element.querySelector(".fx-container")) {
-            return;
-        }
-
-        const { orderedFilters, customFilters } =
+    static addFxContainer(element, filterValue, parsedFilter, trackedStyles) {
+        const { orderedFilters } =
             parsedFilter || this.parseFilterValue(filterValue);
 
         const filterParts = [];
@@ -124,12 +272,14 @@ class FxFilter {
                 const callback = this.filters.get(filter.name);
 
                 if (callback) {
-                    const filterId = `fx-${filter.name}-${Math.random().toString(36).substr(2, 6)}`;
+                    const filterId = `fx-${filter.name}-${++this.filterId}`;
                     const filterContent = callback(element, ...filter.params);
 
-                    svgContent += `<filter id="${filterId}"
-                     x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"
-                     >${filterContent}</filter>`;
+                    if (!filterContent) {
+                        return;
+                    }
+
+                    svgContent += `<filter id="${filterId}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">${filterContent}</filter>`;
 
                     filterParts.push(`url(#${filterId})`);
                 }
@@ -140,24 +290,49 @@ class FxFilter {
 
         const backdropFilter = filterParts.join(" ");
 
-        if (backdropFilter.trim()) {
-            element.innerHTML += `
-                <svg style="position: absolute; width: 0; height: 0;">
-                    ${svgContent}
-                </svg>
-                <div class="fx-container" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; backdrop-filter: ${backdropFilter}; background: transparent; pointer-events: none; z-index: -1; overflow: hidden; border-radius: inherit;"></div>
-            `;
-
-            this.elements.set(element, {
-                filter: filterValue,
-                hasContainer: true,
-            });
+        if (!backdropFilter.trim()) {
+            return null;
         }
+
+        const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg"
+        );
+        svg.setAttribute("data-fx-filter-svg", "true");
+        svg.style.cssText =
+            "position:absolute;width:0;height:0;pointer-events:none;";
+        svg.innerHTML = svgContent;
+
+        const container = document.createElement("div");
+        container.className = "fx-container";
+        // Keep the backdrop node separate so we do not reparse the element subtree.
+        container.style.cssText = `
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            backdrop-filter:${backdropFilter};
+            background:transparent;
+            pointer-events:none;
+            z-index:-1;
+            overflow:hidden;
+            border-radius:inherit;
+        `;
+
+        element.append(svg, container);
+
+        return {
+            filter: filterValue,
+            hasContainer: true,
+            trackedStyles,
+            parsedFilter,
+            svgElement: svg,
+            containerElement: container,
+        };
     }
 
     static createUnifiedSVG(customFilters) {
-        // console.log("createUnifiedSVG called with:", customFilters);
-
         const svg = document.createElement("svg");
         svg.style.cssText =
             "position: absolute; width: 0; height: 0; pointer-events: none;";
@@ -165,38 +340,31 @@ class FxFilter {
         const filterIds = [];
         let svgContent = "";
 
-        customFilters.forEach((filter, index) => {
-            // console.log(
-            //     "Processing filter:",
-            //     filter.name,
-            //     "with params:",
-            //     filter.params
-            // );
+        customFilters.forEach((filter) => {
             const callback = this.filters.get(filter.name);
-            // console.log("Callback found:", !!callback);
 
             if (callback) {
-                // Create unique ID for this filter instance
-                const filterId = `fx-${filter.name}-${Math.random().toString(36).substr(2, 6)}`;
+                const filterId = `fx-${filter.name}-${++this.filterId}`;
                 filterIds.push(filterId);
 
-                // Render filter content with callback, passing parameters as arguments
                 const filterContent = callback(...filter.params);
-                // console.log("Filter content generated:", filterContent);
                 svgContent += `<filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">${filterContent}</filter>`;
             }
         });
 
-        // console.log("Final SVG content:", svgContent);
         svg.innerHTML = svgContent;
-        // console.log("SVG element created:", svg);
         return { svg, filterIds };
     }
 
-    static removeFxContainer(element) {
-        element
-            .querySelectorAll(".fx-container, svg")
-            .forEach((el) => el.remove());
+    static removeFxContainer(element, storedState = this.elements.get(element)) {
+        storedState?.containerElement?.remove();
+        storedState?.svgElement?.remove();
+
+        if (!storedState) {
+            element
+                .querySelectorAll(".fx-container, [data-fx-filter-svg]")
+                .forEach((el) => el.remove());
+        }
     }
 
     static parseFilterValue(filterValue) {
@@ -240,11 +408,11 @@ class FxFilter {
         const { customFilters } =
             parsedFilter || this.parseFilterValue(filterValue);
         const trackedStyles = new Map();
+        const computed = getComputedStyle(element);
 
         customFilters.forEach((filter) => {
             const filterOptions = this.filterOptions.get(filter.name);
             if (filterOptions && filterOptions.updatesOn) {
-                const computed = getComputedStyle(element);
                 filterOptions.updatesOn.forEach((styleProp) => {
                     const value = computed.getPropertyValue(styleProp);
                     trackedStyles.set(styleProp, value);
@@ -280,11 +448,22 @@ FxFilter.add({
         const borderRadiusStr =
             window.getComputedStyle(element).borderRadius || "0";
 
-        // Cache results per element and params
+        if (!width || !height) {
+            return "";
+        }
+
         if (!FxFilter._cache) FxFilter._cache = new WeakMap();
+        if (!FxFilter._resultCache) FxFilter._resultCache = new Map();
         const key = `${width}x${height}-${refractionValue}-${offsetValue}-${chromaticValue}-${borderRadiusStr}`;
         const elemCache = FxFilter._cache.get(element) || {};
         if (elemCache.key === key) return elemCache.result;
+
+        // Different cards often share dimensions, so reuse the generated SVG payload.
+        if (FxFilter._resultCache.has(key)) {
+            const result = FxFilter._resultCache.get(key);
+            FxFilter._cache.set(element, { key, result });
+            return result;
+        }
 
         let borderRadius = 0;
         if (borderRadiusStr.includes("%")) {
@@ -301,7 +480,6 @@ FxFilter.add({
             const imageData = new ImageData(maxDimension, maxDimension);
             const data = imageData.data;
 
-            // Neutral gray
             for (let i = 0; i < data.length; i += 4) {
                 data[i] = 127;
                 data[i + 1] = 127;
@@ -311,7 +489,6 @@ FxFilter.add({
 
             const half = Math.floor(maxDimension / 2);
 
-            // Top / bottom
             for (let y = 0; y < half; y++) {
                 for (let x = 0; x < maxDimension; x++) {
                     const grad = (half - y) / half;
@@ -335,7 +512,6 @@ FxFilter.add({
                 }
             }
 
-            // Left / right
             for (let x = 0; x < half; x++) {
                 for (let y = 0; y < maxDimension; y++) {
                     const grad = (half - x) / half;
@@ -377,7 +553,12 @@ FxFilter.add({
             );
 
             if (borderRadius > 0 || offsetValue > 0) {
-                const maskCanvas = new OffscreenCanvas(width, height);
+                const maskCanvas =
+                    typeof OffscreenCanvas === "function"
+                        ? new OffscreenCanvas(width, height)
+                        : document.createElement("canvas");
+                maskCanvas.width = width;
+                maskCanvas.height = height;
                 const maskCtx = maskCanvas.getContext("2d");
                 maskCtx.fillStyle = "rgb(127,127,127)";
                 maskCtx.beginPath();
@@ -431,6 +612,7 @@ FxFilter.add({
             `;
         }
 
+        FxFilter._resultCache.set(key, result);
         FxFilter._cache.set(element, { key, result });
         return result;
     },
