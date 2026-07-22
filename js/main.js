@@ -21,6 +21,7 @@ function initializeApp() {
     window.scrollTo(0, 0);
 
     const isMobile = /Mobi/i.test(window.navigator.userAgent);
+    let scrollQuality = "optimizeQuality";
 
     // Initialize ScrollSmoother
     const smoother = ScrollSmoother.create({
@@ -30,16 +31,14 @@ function initializeApp() {
         normalizeScroll: isMobile,
         ignoreMobileResize: true,
         onUpdate: (self) => {
-            if (self.getVelocity() > 100) {
-                // Reduce quality during fast scrolling
+            const nextScrollQuality =
+                self.getVelocity() > 100 ? "optimizeSpeed" : "optimizeQuality";
+
+            if (nextScrollQuality !== scrollQuality) {
+                scrollQuality = nextScrollQuality;
                 document.documentElement.style.setProperty(
                     "--scroll-quality",
-                    "optimizeSpeed"
-                );
-            } else {
-                document.documentElement.style.setProperty(
-                    "--scroll-quality",
-                    "optimizeQuality"
+                    scrollQuality
                 );
             }
         },

@@ -13,6 +13,9 @@ export class CustomScrollbar {
         this.trackHeight = 0;
         this.smoother = null;
         this.lastScrollTop = 0;
+        this.scrollFrame = null;
+        this.idleFrameCount = 0;
+        this.trackScroll = this.trackScroll.bind(this);
 
         this.createScrollbar();
         this.init();
@@ -56,6 +59,9 @@ export class CustomScrollbar {
             this.handleInteraction.bind(this),
             { passive: true }
         );
+        window.addEventListener("scroll", () => this.startScrollTracking(), {
+            passive: true,
+        });
 
         // Listen for ScrollTrigger refresh
         if (window.ScrollTrigger) {
@@ -80,28 +86,35 @@ export class CustomScrollbar {
     }
 
     startScrollTracking() {
-        // Use requestAnimationFrame to continuously track scroll changes
-        const trackScroll = () => {
-            if (!this.smoother) return;
+        if (!this.smoother || this.scrollFrame !== null) return;
 
-            const currentScrollTop = this.getCurrentScroll();
+        this.idleFrameCount = 0;
+        this.scrollFrame = requestAnimationFrame(this.trackScroll);
+    }
 
-            // Only update if scroll position has changed
-            if (currentScrollTop !== this.lastScrollTop) {
-                this.lastScrollTop = currentScrollTop;
-                this.updateThumb();
+    trackScroll() {
+        this.scrollFrame = null;
 
-                // Show scrollbar when scrolling (but not when dragging)
-                if (!this.isDragging) {
-                    this.showScrollbar();
-                    this.scheduleHide();
-                }
+        if (!this.smoother) return;
+
+        const currentScrollTop = this.getCurrentScroll();
+
+        if (currentScrollTop !== this.lastScrollTop) {
+            this.lastScrollTop = currentScrollTop;
+            this.idleFrameCount = 0;
+            this.updateThumb();
+
+            if (!this.isDragging) {
+                this.showScrollbar();
+                this.scheduleHide();
             }
+        } else {
+            this.idleFrameCount++;
+        }
 
-            requestAnimationFrame(trackScroll);
-        };
-
-        trackScroll();
+        if (this.isDragging || this.idleFrameCount < 2) {
+            this.scrollFrame = requestAnimationFrame(this.trackScroll);
+        }
     }
 
     setupScrollbarEvents() {
@@ -190,6 +203,7 @@ export class CustomScrollbar {
 
         // Use scrollTo without smooth animation for immediate response
         this.smoother.scrollTo(newScrollTop, false);
+        this.startScrollTracking();
     }
 
     endDrag() {
@@ -266,6 +280,7 @@ export class CustomScrollbar {
         if (!this.isDragging) {
             this.showScrollbar();
             this.scheduleHide();
+            this.startScrollTracking();
         }
     }
 }

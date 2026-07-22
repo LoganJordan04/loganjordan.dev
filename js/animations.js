@@ -121,6 +121,7 @@ export class ScrollWords {
         this.wordSpacing = options.wordSpacing || "clamp(25px, 8vw, 50px)";
         this.animations = [];
         this.scrollingLines = [];
+        this.isMarqueeVisible = true;
         this.scrollTriggers = [];
         this.splitTexts = [];
         this.isConverging = false;
@@ -134,11 +135,13 @@ export class ScrollWords {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", () => {
                 this.setupScrolling();
+                this.setupMarqueeVisibilityObserver();
                 this.setupConvergeAnimation();
                 this.setupResizeHandler();
             });
         } else {
             this.setupScrolling();
+            this.setupMarqueeVisibilityObserver();
             this.setupConvergeAnimation();
             this.setupResizeHandler();
         }
@@ -174,6 +177,33 @@ export class ScrollWords {
 
         words.forEach((word, index) => {
             this.createInfiniteScroll(word, index);
+        });
+    }
+
+    setupMarqueeVisibilityObserver() {
+        const wordsContainer = document.querySelector(".words-container");
+
+        if (!wordsContainer || !window.IntersectionObserver) return;
+
+        this.marqueeObserver = new IntersectionObserver(
+            ([entry]) => {
+                this.setMarqueeVisibility(entry.isIntersecting);
+            },
+            { rootMargin: "150px 0px" }
+        );
+        this.marqueeObserver.observe(wordsContainer);
+    }
+
+    setMarqueeVisibility(isVisible) {
+        if (this.isMarqueeVisible === isVisible) return;
+
+        this.isMarqueeVisible = isVisible;
+        this.animations.forEach((timeline) => {
+            if (isVisible) {
+                timeline.play();
+            } else {
+                timeline.pause();
+            }
         });
     }
 
@@ -218,6 +248,8 @@ export class ScrollWords {
     createInfiniteScrollTimeline(scrollingLine) {
         const { allElements, element, index } = scrollingLine;
         const previousProgress = scrollingLine.timeline?.progress() || 0;
+        const wasPaused =
+            scrollingLine.timeline?.paused() ?? !this.isMarqueeVisible;
 
         scrollingLine.timeline?.kill();
 
@@ -230,7 +262,7 @@ export class ScrollWords {
             gsap.set(el, { x: elementIndex * totalDistance });
         });
 
-        const timeline = gsap.timeline({ repeat: -1 });
+        const timeline = gsap.timeline({ repeat: -1, paused: wasPaused });
         timeline.fromTo(
             allElements,
             {
