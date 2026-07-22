@@ -77,29 +77,11 @@ function initializeApp() {
         // Store sketch instances for cleanup
         const sketchInstances = new Map();
 
-        // Performance monitoring for Three.js instances
-        const performanceMonitor = {
-            activeInstances: 0,
-            maxInstances: isMobile ? 1 : 2, // Limit concurrent instances on mobile
-        };
-
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         const { target } = entry;
-
-                        // Check if we should limit instances for performance
-                        if (
-                            performanceMonitor.activeInstances >=
-                                performanceMonitor.maxInstances &&
-                            isMobile
-                        ) {
-                            console.log(
-                                "Delaying Three.js initialization for performance"
-                            );
-                            return;
-                        }
 
                         if (
                             target.id === "hero-three-container" &&
@@ -114,7 +96,6 @@ function initializeApp() {
                                 });
                                 sketchInstances.set(target.id, sketch);
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 // Add error handling for sketch initialization
                                 if (!sketch.renderer) {
@@ -147,7 +128,6 @@ function initializeApp() {
                                     window.aboutSketch
                                 );
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 if (!window.aboutSketch.renderer) {
                                     throw new Error(
@@ -176,7 +156,6 @@ function initializeApp() {
                                 });
                                 sketchInstances.set(target.id, sketch);
                                 target.dataset.initialized = "true";
-                                performanceMonitor.activeInstances++;
 
                                 if (!sketch.renderer) {
                                     throw new Error(
@@ -192,7 +171,9 @@ function initializeApp() {
                             }
                         }
 
-                        observer.unobserve(target);
+                        if (target.dataset.initialized) {
+                            observer.unobserve(target);
+                        }
                     }
                 });
             },
@@ -219,7 +200,6 @@ function initializeApp() {
                 }
             });
             sketchInstances.clear();
-            performanceMonitor.activeInstances = 0;
         };
 
         // Cleanup on page unload
@@ -268,7 +248,13 @@ function initializeApp() {
                                     sketch.dispose();
                                 }
                                 sketchInstances.delete(id);
-                                performanceMonitor.activeInstances--;
+
+                                const container = document.getElementById(id);
+                                if (container) {
+                                    delete container.dataset.initialized;
+                                    delete container.dataset.error;
+                                    observer.observe(container);
+                                }
                             }
                             memoryWarningCount = 0;
                         }
